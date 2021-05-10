@@ -1,4 +1,4 @@
-name: Run Cluster class tests
+name: Automated Test Cases
 on:
   push:
     branches:
