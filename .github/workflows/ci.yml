@@ -21,4 +21,4 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests with pytest
-        run: python Cluster/test_Cluster.py
+        run: python BOCC/test_BOCC.py
