@@ -1,4 +1,5 @@
 *.DS_Store
 .idea/
-tissue_specificity.csv
+*tissue_specificity.tsv
 venv/
+*__pycache__/

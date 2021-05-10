@@ -11,14 +11,22 @@ url_parts = list(norm_tissues['Gene-Gene'])
 # url_parts = list(set(norm_tissues['Gene'] + '-' + norm_tissues['Gene name']))
 base_url = 'https://www.proteinatlas.org/'
 
+pre_gathered_info = pd.read_csv('tissue_specificity.tsv',sep='\t',header=None)
+pg_parts = set(pre_gathered_info.iloc[:,-1])
+
 genes = []
 infos = {'tissue_specificity':[],
          'single_cell_tissue_specificity':[],
          'blood_specificity':[],
          'cancer_prognosis':[],
          'predicted_location':[]}
+skip_count = 0
 for i,part in enumerate(url_parts[start:end]):
-    print(i)
+    if part in pg_parts:
+        skip_count += 1
+        continue
+    if skip_count % 1000 == 0:
+        print('Skip count: ' + str(skip_count))
     try:
         url = base_url + part
         uf = urllib.request.urlopen(url)
@@ -41,7 +49,7 @@ for i,part in enumerate(url_parts[start:end]):
         infos['blood_specificity'].append(bs)
         infos['cancer_prognosis'].append(cp)
         infos['predicted_location'].append(pl)
-        genes.append(part.split('-')[1])
+        genes.append(part)
     except:
         print(part)
     if i % 1000 == 0:
@@ -49,7 +57,7 @@ for i,part in enumerate(url_parts[start:end]):
         df = pd.DataFrame(infos)
         df['Gene'] = genes
         # append to file
-        df.to_csv('tissue_specificity.csv', sep='\t', index=False, mode='a', header=False)
+        df.to_csv('tissue_specificity.tsv', sep='\t', index=False, mode='a', header=False)
         genes = []
         infos = {'tissue_specificity': [],
                  'single_cell_tissue_specificity': [],
