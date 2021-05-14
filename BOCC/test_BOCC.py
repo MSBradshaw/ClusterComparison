@@ -1,5 +1,7 @@
 import unittest
 from BOCC import BOCC
+from BOCC import load_clusters, plot_basic_com_stats
+
 
 SMALL_TEST_COMS = 'Data/three_communities.txt'
 BIG_TEST_COMS = 'Data/example_communities.txt'
@@ -56,6 +58,19 @@ class ClusterTests(unittest.TestCase):
         self.assertEqual(df.iloc[0, 6], 'GO:0006649', 'Results to not match expected')
         self.assertEqual(df.iloc[0, 5], 0.0002912762741932548, 'Results to not match expected')
 
+    def test_load_file(self):
+        coms = load_clusters(SMALL_TEST_COMS)
+        self.assertEqual(len(coms), 3, 'Incorrect number of communities loaded')
+
+    def test_plotting(self):
+        # count lines in BIG_TEST_COMS
+        num_coms = sum(1 for x in open(BIG_TEST_COMS,'r') if x[0] != '#')
+        coms = load_clusters(BIG_TEST_COMS)
+        # res = plot_basic_com_stats(coms, output='del.png', logx=True)
+        res = plot_basic_com_stats(coms)
+        print(res)
+        self.assertEqual(num_coms,len(res['ratio']),'Number of communities and number of ratios do not match')
+        self.assertEqual(num_coms, len(res['size']), 'Number of communities and number of sizes do not match')
 
 if __name__ == '__main__':
     unittest.main()
