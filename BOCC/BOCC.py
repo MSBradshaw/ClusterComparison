@@ -104,6 +104,135 @@ class BOCC:
         self.go_results = pd.DataFrame(results)
         return self.go_results
 
+    def get_gene_tissue_specificities(self, all_genes_dict: typing.Dict = None) -> \
+            typing.Tuple[typing.Dict, typing.Dict, typing.Dict]:
+        """
+        Get the tissue specificity information for each gene in the cluster. This is the information taken from the
+        Human Protein Atlas (https://www.proteinatlas.org/).
+        The first dictionary contains 'RNA tissue specificity' with is a verbal measurement of how strong the
+        specificity is.
+        The second dictionary contains the info from 'RNA single cell type specificity' type of enrichment that occurs
+        to the group.
+        The third dictionary contains the info from 'RNA single cell type specific NX' with the cell-type / tissue
+        the gene is specific for.
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return: tuple of two dictionaries
+        """
+
+        self.get_genes()
+        gene_ts = {}
+        gene_sc_type = {}
+        gene_sc_type_info = {}
+        if all_genes_dict is None:
+            with open('BOCC/all_genes_info.json', 'r') as f:
+                all_genes_dict = json.load(f)
+        for g in self.genes:
+            gene_ts[g] = all_genes_dict[g]['RNA tissue specificity']
+            gene_sc_type[g] = all_genes_dict[g]['RNA single cell type specificity']
+            gene_sc_type_info[g] = all_genes_dict[g]['RNA single cell type specific NX']
+
+        return gene_ts, gene_sc_type, gene_sc_type_info
+
+    def get_diseases_associated_with_genes(self, all_genes_dict: typing.Dict = None) -> typing.Dict:
+        """
+        Get the disease associated with each gene in the cluster. This is the information taken from the
+        Human Protein Atlas (https://www.proteinatlas.org/).
+        The first dictionary contains 'RNA tissue specificity' with is a verbal measurement of how strong the
+        specificity is.
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return: tuple of two dictionaries
+        """
+
+        self.get_genes()
+
+        gene_diseases = {}
+        if all_genes_dict is None:
+            with open('BOCC/all_genes_info.json', 'r') as f:
+                all_genes_dict = json.load(f)
+        for g in self.genes:
+            gene_diseases[g] = all_genes_dict[g]['Disease involvement']
+        return gene_diseases
+
+    def get_disease_counts(self, all_genes_dict: typing.Dict = None) -> typing.Dict:
+        """
+        Count the number of times each diseases is associated with a gene in the cluster
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return: dictionary keys are disease and values are occurrence counts (number of times it appeared in the community)
+        """
+        gds = self.get_diseases_associated_with_genes(all_genes_dict)
+        disease_counts = {}
+        for key in gds.keys():
+            diseases = gds[key]
+            for d in diseases:
+                if d in disease_counts:
+                    disease_counts[d] += 1
+                else:
+                    disease_counts[d] = 1
+
+        return disease_counts
+
+    def summarize_disease_associations(self, all_genes_dict: typing.Dict = None):
+        """
+        Count the number of times each diseases is associated with a gene in the cluster
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return: the most common disease association
+        """
+        disease_counts = self.get_disease_counts(all_genes_dict)
+        return get_max_in_dict(disease_counts)
+
+    def get_cell_type_counts(self, all_genes_dict: typing.Dict = None) -> typing.Dict:
+        """
+
+        :param all_genes_dict:
+        :return:
+        """
+        dicts = self.get_gene_tissue_specificities(all_genes_dict)
+        # the third dict keys are the thing of interest here
+        cell_type_counts = {}
+        for gene in dicts[2].keys():
+            for cell_type in dicts[2][gene].keys():
+                if cell_type in cell_type_counts:
+                    cell_type_counts[cell_type] += 1
+                else:
+                    cell_type_counts[cell_type] = 1
+
+        return cell_type_counts
+
+    def summarize_cell_type_specificity(self, all_genes_dict: typing.Dict = None):
+        """
+        Get the most frequent cell type
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return:
+        """
+        cell_type_counts = self.get_cell_type_counts(all_genes_dict)
+        return get_max_in_dict(cell_type_counts)
+
+
+def get_max_in_dict(d):
+    max_key = None
+    max_key_value = 0
+    for key in d.keys():
+        # TODO there are some disease that are not diseases like 'Disease mutation' that should be ignored
+        diseases_to_ignore = ['Disease mutation']
+        if key in diseases_to_ignore:
+            continue
+
+        if d[key] > max_key_value:
+            max_key_value = d[key]
+            max_key = key
+
+    return max_key, max_key_value
+
 
 def load_clusters(input_file: str) -> typing.List[BOCC]:
     """
@@ -124,7 +253,8 @@ def load_clusters(input_file: str) -> typing.List[BOCC]:
     return clusters
 
 
-def plot_basic_com_stats(coms: typing.List[BOCC], output: str = None, logx: bool = False) -> typing.Dict[str, typing.List]:
+def plot_basic_com_stats(coms: typing.List[BOCC], output: str = None, logx: bool = False) -> typing.Dict[
+    str, typing.List]:
     """
     Take a list of communities and plot the size vs the HPO:Gene ratio of each community
     :param coms: list of BOCC objects to plot
@@ -141,7 +271,7 @@ def plot_basic_com_stats(coms: typing.List[BOCC], output: str = None, logx: bool
         results['ratio'].append(hpo_gene_ratio)
         results['size'].append(tl)
     if output is not None:
-        plt.scatter(results['size'],results['ratio'])
+        plt.scatter(results['size'], results['ratio'])
         plt.xlabel('Size')
         if logx:
             plt.xscale('log')

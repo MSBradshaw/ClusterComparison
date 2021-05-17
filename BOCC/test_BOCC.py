@@ -2,11 +2,11 @@ import unittest
 from BOCC import BOCC
 from BOCC import load_clusters, plot_basic_com_stats
 
-
 SMALL_TEST_COMS = 'Data/three_communities.txt'
 BIG_TEST_COMS = 'Data/example_communities.txt'
 EXAMPLE_MEMBERS = ['SEMA4A', 'ABCA4', 'MERTK', 'HP:0000608']
 EXAMPLE_TYPES = ['gene', 'gene', 'gene', 'hpo']
+
 
 class ClusterTests(unittest.TestCase):
     def test_blank(self):
@@ -21,7 +21,7 @@ class ClusterTests(unittest.TestCase):
         self.assertEqual(len(c.members), len(EXAMPLE_MEMBERS), 'Number of members should be 4')
         self.assertEqual(len(c.types), len(EXAMPLE_TYPES), 'Number of types should be 4')
         # add more to the members
-        c.add_members(['gene1','HP:000007'], ['gene','hpo'])
+        c.add_members(['gene1', 'HP:000007'], ['gene', 'hpo'])
         self.assertEqual(len(c.members), 6, 'Number of members should be 6')
         self.assertEqual(len(c.types), 6, 'Number of types should be 6')
         # add more but without types listed
@@ -64,14 +64,59 @@ class ClusterTests(unittest.TestCase):
 
     def test_plotting(self):
         # count lines in BIG_TEST_COMS
-        num_coms = sum(1 for x in open(BIG_TEST_COMS,'r') if x[0] != '#')
+        num_coms = sum(1 for x in open(BIG_TEST_COMS, 'r') if x[0] != '#')
         coms = load_clusters(BIG_TEST_COMS)
         # res = plot_basic_com_stats(coms, output='del.png', logx=True)
         res = plot_basic_com_stats(coms)
-        print(res)
-        self.assertEqual(num_coms,len(res['ratio']),'Number of communities and number of ratios do not match')
+        self.assertEqual(num_coms, len(res['ratio']), 'Number of communities and number of ratios do not match')
         self.assertEqual(num_coms, len(res['size']), 'Number of communities and number of sizes do not match')
+
+    def test_get_ts(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        c.get_genes()
+        stuff = c.get_gene_tissue_specificities()
+        self.assertEqual(len(stuff[0]), len(c.get_genes()),
+                         'Length of genes and tissue specific information should match')
+        self.assertEqual(len(stuff[1]), len(c.get_genes()),
+                         'Length of genes and cell-type group information should match')
+        self.assertEqual(len(stuff[2]), len(c.get_genes()),
+                         'Length of genes and cell-type specific information should match')
+
+    def test_disease_associated_genes(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        c.get_genes()
+        stuff = c.get_diseases_associated_with_genes()
+        self.assertEqual(len(stuff), len(c.get_genes()),
+                         'Length of genes and tissue specific information should match')
+
+    def test_get_disease_counts(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        c.get_genes()
+        stuff = c.get_disease_counts()
+        self.assertEqual(len(stuff), 6, 'Number of returned associations does not match expectation')
+        self.assertEqual(stuff['Retinitis pigmentosa'], 3, 'All gene in the community (3) should be associated with RP')
+
+    def test_summarize_disease_associations(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        stuff = c.summarize_disease_associations()
+        self.assertEqual(stuff[1], len(c.get_genes()),
+                         'The max association count should not be larger than the number of genes in the com')
+
+    def test_get_cell_type_counts(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        stuff = c.get_cell_type_counts()
+        self.assertEqual(stuff['Cone photoreceptor cells'], 1, 'There should be 1 Cone cell occurrence')
+
+    def test_summarize_cell_type_specificity(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        stuff = c.summarize_cell_type_specificity()
+        self.assertEqual(stuff[1], 1, 'The max association count should not be 1')
 
 if __name__ == '__main__':
     unittest.main()
-
