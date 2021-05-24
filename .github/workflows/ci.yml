@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          gunzip all_genes_info.json.gz
+          gunzip HumanProteinAtlas/all_genes_info.json
           pip install -r requirements.txt
       - name: Run tests with pytest
         run: python BOCC/test_BOCC.py
