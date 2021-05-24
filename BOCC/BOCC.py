@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import typing
 import matplotlib.pyplot as plt
+import warnings
 
 
 class BOCC:
@@ -129,9 +130,15 @@ class BOCC:
             with open('BOCC/all_genes_info.json', 'r') as f:
                 all_genes_dict = json.load(f)
         for g in self.genes:
-            gene_ts[g] = all_genes_dict[g]['RNA tissue specificity']
-            gene_sc_type[g] = all_genes_dict[g]['RNA single cell type specificity']
-            gene_sc_type_info[g] = all_genes_dict[g]['RNA single cell type specific NX']
+            try:
+                gene_ts[g] = all_genes_dict[g]['RNA tissue specificity']
+                gene_sc_type[g] = all_genes_dict[g]['RNA single cell type specificity']
+                gene_sc_type_info[g] = all_genes_dict[g]['RNA single cell type specific NX']
+            except KeyError:
+                warnings.warn('Warning, gene not found in HPA ' + g)
+                gene_ts[g] = None
+                gene_sc_type[g] = None
+                gene_sc_type_info[g] = None
 
         return gene_ts, gene_sc_type, gene_sc_type_info
 
@@ -154,7 +161,11 @@ class BOCC:
             with open('BOCC/all_genes_info.json', 'r') as f:
                 all_genes_dict = json.load(f)
         for g in self.genes:
-            gene_diseases[g] = all_genes_dict[g]['Disease involvement']
+            try:
+                gene_diseases[g] = all_genes_dict[g]['Disease involvement']
+            except KeyError:
+                # control for when there are no disease because the gene is not found in HPA
+                gene_diseases[g] = None
         return gene_diseases
 
     def get_disease_counts(self, all_genes_dict: typing.Dict = None) -> typing.Dict:
@@ -169,6 +180,9 @@ class BOCC:
         disease_counts = {}
         for key in gds.keys():
             diseases = gds[key]
+            # control for when there are no disease because the gene is not found in HPA
+            if diseases is None:
+                continue
             for d in diseases:
                 if d in disease_counts:
                     disease_counts[d] += 1
@@ -190,14 +204,18 @@ class BOCC:
 
     def get_cell_type_counts(self, all_genes_dict: typing.Dict = None) -> typing.Dict:
         """
-
-        :param all_genes_dict:
-        :return:
+        count up the number of times each cell type is listed as being specific for any of the genes in the community
+        :param all_genes_dict: dictionary of human protein atlas information. This will be auto loaded is not given
+        directly, but giving the function a preloaded version makes this process quicker, especially if you are
+        doing thousands of communities.
+        :return: dictionary keys are disease and values are occurrence counts (number of times it appeared in the community)
         """
         dicts = self.get_gene_tissue_specificities(all_genes_dict)
         # the third dict keys are the thing of interest here
         cell_type_counts = {}
         for gene in dicts[2].keys():
+            if dicts[2][gene] is None:
+                continue
             for cell_type in dicts[2][gene].keys():
                 if cell_type in cell_type_counts:
                     cell_type_counts[cell_type] += 1
@@ -217,9 +235,48 @@ class BOCC:
         cell_type_counts = self.get_cell_type_counts(all_genes_dict)
         return get_max_in_dict(cell_type_counts)
 
+    def get_summary_stats(self, p_tresh: float = 0.000003) -> pd.DataFrame:
+        """
+        This function returns a pd.DataFrame with information summarizing the biological relevance of a cluster
+        :return:
+        """
+        res = {'cluster_id': [], 'cluster_size': [], 'gene_ratio': [], 'HPO_ratio': [], 'num_sig_go_enrichment_terms': [],
+               'sig_go_enrichment_p_vals': [],
+               'sig_go_enrichment_terms': [], 'go_sig_threshold': [], 'max_norm_cell_type_specificity': [],
+               'max_norm_cell_type_comma_sep_string': [], 'max_norm_disease_specificity': [],
+               'max_norm_disease_comma_sep_string': []}
+        # cluster id/name
+        res['cluster_id'].append(self.name)
+        # number size of cluster
+        res['cluster_size'].append(len(self.members))
+        # gene ratio
+        res['gene_ratio'].append(len(self.get_genes()) / len(self.members))
+        # HPO ratio
+        res['HPO_ratio'].append((len(self.members) - len(self.get_genes())) / len(self.members))
+        # go enrichment, # terms with p-value > p_tresh
+        go_df = self.go_enrichment()
+        go_df = go_df[go_df['pValue'] < p_tresh]
+        res['num_sig_go_enrichment_terms'].append(go_df.shape[0])
+        # go enrichment, comma separated string of terms with p-value > p_tresh
+        res['sig_go_enrichment_p_vals'].append(','.join([str(x) for x in go_df['pValue']]))
+        res['sig_go_enrichment_terms'].append(','.join([str(x) for x in go_df['id']]))
+        res['go_sig_threshold'].append(p_tresh)
+        # max normalized cell type specificity value
+        cts = self.summarize_cell_type_specificity()
+        res['max_norm_cell_type_specificity'].append(cts[1] / len(self.genes))
+        # comma separated list of cells with max normalized cell type specificity
+        res['max_norm_cell_type_comma_sep_string'].append(','.join(cts[0]))
+        # max normalized disease specificity value
+        ds = self.summarize_disease_associations()
+        res['max_norm_disease_specificity'].append(ds[1] / len(self.genes))
+        # comma separated list of cells with max normalized disease specificity
+        res['max_norm_disease_comma_sep_string'].append(','.join(ds[0]))
+
+        return pd.DataFrame(res)
+
 
 def get_max_in_dict(d):
-    max_key = None
+    max_keys = []
     max_key_value = 0
     for key in d.keys():
         # TODO there are some disease that are not diseases like 'Disease mutation' that should be ignored
@@ -229,9 +286,11 @@ def get_max_in_dict(d):
 
         if d[key] > max_key_value:
             max_key_value = d[key]
-            max_key = key
+            max_keys = [key]
+        elif d[key] == max_key_value:
+            max_keys.append(key)
 
-    return max_key, max_key_value
+    return max_keys, max_key_value
 
 
 def load_clusters(input_file: str) -> typing.List[BOCC]:
@@ -278,3 +337,20 @@ def plot_basic_com_stats(coms: typing.List[BOCC], output: str = None, logx: bool
         plt.ylabel('Ratio (HPO:Gene)')
         plt.savefig(output)
     return results
+
+
+def summarize_clusters(clusters: typing.List[BOCC], p_tresh: float = 0.000003) -> pd.DataFrame:
+    """
+
+    :param clusters: list of BOCC objects
+    :param p_tresh: threshold to be used for go term significance
+    :return: pd.DataFrame of biologically relevant information for each cluster
+    """
+    df = None
+    for c in clusters:
+        d = c.get_summary_stats(p_tresh)
+        if df is None:
+            df = d
+        else:
+            df = pd.concat([df, d])
+    return df

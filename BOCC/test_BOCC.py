@@ -1,6 +1,8 @@
 import unittest
 from BOCC import BOCC
-from BOCC import load_clusters, plot_basic_com_stats
+from BOCC import load_clusters, plot_basic_com_stats, summarize_clusters
+import pickle
+
 
 SMALL_TEST_COMS = 'Data/three_communities.txt'
 BIG_TEST_COMS = 'Data/example_communities.txt'
@@ -54,6 +56,7 @@ class ClusterTests(unittest.TestCase):
         c = BOCC()
         c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
         df = c.go_enrichment()
+        pickle.dump(df, open('del.pickle', 'bw'))
         self.assertNotEqual(df.shape[0], 0, 'Results should not be empty')
         self.assertEqual(df.iloc[0, 6], 'GO:0006649', 'Results to not match expected')
         self.assertEqual(df.iloc[0, 5], 0.0002912762741932548, 'Results to not match expected')
@@ -117,6 +120,25 @@ class ClusterTests(unittest.TestCase):
         c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
         stuff = c.summarize_cell_type_specificity()
         self.assertEqual(stuff[1], 1, 'The max association count should not be 1')
+
+    def test_get_summary_stats(self):
+        c = BOCC()
+        c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
+        df = c.get_summary_stats(0.001)
+        self.assertEqual(df.iloc[0, :]['cluster_size'], 4, 'Cluster size does not match expectation')
+        self.assertEqual(df.iloc[0, :]['gene_ratio'], 0.75, 'gene ratio not as expected')
+        self.assertEqual(df.iloc[0, :]['HPO_ratio'], 0.25, 'HPO ratio not as expected')
+        self.assertEqual(df.iloc[0, :]['num_sig_go_enrichment_terms'], 8, 'wrong number of expected significant terms')
+        self.assertEqual(df.iloc[0, :]['go_sig_threshold'], 0.001, 'wrong threshold for significance')
+        self.assertEqual(df.iloc[0, :]['max_norm_cell_type_specificity'], 1/3, 'wrong max norm cell type specificity')
+        self.assertEqual(df.iloc[0, :]['max_norm_disease_specificity'], 3/3, 'wrong max norm cell type specificity')
+
+    def test_summarize_clusters(self):
+        coms = load_clusters(SMALL_TEST_COMS)
+        df = summarize_clusters(coms)
+        print(df)
+        self.assertEqual(df.shape[0], len(coms), 'Incorrect number of communities loaded')
+        self.assertEqual(df.shape[9], 10, 'Incorrect number of communities loaded')
 
 if __name__ == '__main__':
     unittest.main()
