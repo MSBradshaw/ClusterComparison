@@ -56,7 +56,6 @@ class ClusterTests(unittest.TestCase):
         c = BOCC()
         c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
         df = c.go_enrichment()
-        pickle.dump(df, open('del.pickle', 'bw'))
         self.assertNotEqual(df.shape[0], 0, 'Results should not be empty')
         self.assertEqual(df.iloc[0, 6], 'GO:0006649', 'Results to not match expected')
         self.assertEqual(df.iloc[0, 5], 0.0002912762741932548, 'Results to not match expected')
@@ -136,9 +135,8 @@ class ClusterTests(unittest.TestCase):
     def test_summarize_clusters(self):
         coms = load_clusters(SMALL_TEST_COMS)
         df = summarize_clusters(coms)
-        print(df)
         self.assertEqual(df.shape[0], len(coms), 'Incorrect number of communities loaded')
-        self.assertEqual(df.shape[9], 10, 'Incorrect number of communities loaded')
+        self.assertEqual(df.shape[1], 12, 'Incorrect number of features')
 
 if __name__ == '__main__':
     unittest.main()
