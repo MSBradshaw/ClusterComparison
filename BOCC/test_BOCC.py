@@ -138,5 +138,6 @@ class ClusterTests(unittest.TestCase):
         self.assertEqual(df.shape[0], len(coms), 'Incorrect number of communities loaded')
         self.assertEqual(df.shape[1], 12, 'Incorrect number of features')
 
+
 if __name__ == '__main__':
     unittest.main()
