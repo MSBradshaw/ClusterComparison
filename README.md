@@ -17,6 +17,7 @@ Move into the repo
 Set up the conda enviroment (see [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) for how to install conda)
 
 `conda config --append channels conda-forge`
+
 `conda create --name bocc --file requirements.txt`
 
 Start the conda enviroment
