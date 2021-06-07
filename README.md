@@ -28,6 +28,31 @@ Uncompress data
 
 `gunzip BOCC/all_genes_info.json.gz`
 
+## Algorithms
+
+### CESNA
+
+Install SNAP
+
+`git clone git@github.com:snap-stanford/snap.git`
+
+`cd snap/examples/cesna`
+
+`make`
+
+Run CENSA
+
+Change -nt to the number of threads to be used for parallelization
+
+`./cesna -i ../../../Data/HPO_String_edgelist.numbered.tsv -l ../../../Data/HPO_String_edgelist.nodenames.tsv -c -1 -nt 1 -o hpo_string_cesna`
+
+### Greedy, Info Map, Walk Track and Belief
+
+`belief.py`, `cluster_info.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
+
+`python Algorithms/greedy.py --edgelist Data/HPO_String_edgelist.tsv --out infomap_coms.txt`
+
+
 ## How to use BOCC to summarize a set of communities
 
 `python BOCC/summarize_clusters.py --coms Data/three_communities.txt --pval 0.00005 --out results.tsv`
