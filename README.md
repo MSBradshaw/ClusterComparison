@@ -28,11 +28,10 @@ Uncompress data
 
 `gunzip BOCC/all_genes_info.json.gz`
 
-## Algorithms
 
-### CESNA
+## CESNA
 
-Install SNAP
+### Install SNAP
 
 `git clone git@github.com:snap-stanford/snap.git`
 
@@ -40,13 +39,13 @@ Install SNAP
 
 `make`
 
-Run CENSA
+### Run CENSA
 
-Change -nt to the number of threads to be used for parallelization
+Change `-nt` to the number of threads to be used for parallelization
 
 `./cesna -i ../../../Data/HPO_String_edgelist.numbered.tsv -l ../../../Data/HPO_String_edgelist.nodenames.tsv -c -1 -nt 1 -o hpo_string_cesna`
 
-### Greedy, Info Map, Walk Track and Belief
+## Greedy, Info Map, Walk Track and Belief
 
 `belief.py`, `cluster_info.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
 
