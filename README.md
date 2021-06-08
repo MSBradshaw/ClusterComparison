@@ -14,15 +14,15 @@ Move into the repo
 
 `cd ClusterComparison/`
 
-Set up the conda enviroment (see [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) for how to install conda)
+Create an environment
 
-`conda config --append channels conda-forge`
+`python3 -m venv env`
 
-`conda create --name bocc --file requirements.txt`
+Start the enviroment
+`source env/bin/activate`
 
-Start the conda enviroment
-
-`conda activate bocc`
+Install requirements
+`python -m pip install -r requirements.txt`
 
 Uncompress data
 
