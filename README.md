@@ -45,6 +45,10 @@ Change `-nt` to the number of threads to be used for parallelization
 
 `./cesna -i ../../../Data/HPO_String_edgelist.numbered.tsv -l ../../../Data/HPO_String_edgelist.nodenames.tsv -c -1 -nt 1 -o hpo_string_cesna`
 
+Create community file with CESNA results
+
+`python Algorithms/number_cesna_results.py --cesna_res snap/examples/cesna/cmtyvv.txt --output cesna_coms.txt --node_names Data/HPO_String_edgelist.nodenames.tsv`
+
 ## Greedy, Info Map, Walk Track and Belief
 
 `belief.py`, `cluster_info.py`, `greedy.py`, and `walktrap.py` are all run in the same manner

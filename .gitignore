@@ -9,4 +9,5 @@ BOCC/all_genes_info.json
 Data/
 snap/
 env/
-
+*.results
+*coms.txt
