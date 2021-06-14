@@ -28,7 +28,6 @@ Uncompress data
 
 `gunzip BOCC/all_genes_info.json.gz`
 
-
 ## CESNA
 
 ### Install SNAP
@@ -49,12 +48,15 @@ Create community file with CESNA results
 
 `python Algorithms/number_cesna_results.py --cesna_res snap/examples/cesna/cmtyvv.txt --output cesna_coms.txt --node_names Data/HPO_String_edgelist.nodenames.tsv`
 
-## Greedy, Info Map, Walk Track and Belief
+## Greedy, Walk Track and Belief
 
-`belief.py`, `cluster_info.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
+`belief.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
 
-`python Algorithms/greedy.py --edgelist Data/HPO_String_edgelist.tsv --out infomap_coms.txt`
+`python Algorithms/greedy.py --edgelist Data/HPO_String_edgelist.tsv --out greedy_coms.txt`
 
+## Infomap
+
+`--edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
 
 ## How to use BOCC to summarize a set of communities
 
