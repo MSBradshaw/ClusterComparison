@@ -74,8 +74,13 @@ class BOCC:
             print('Too many genes for API request')
             self.go_results = pd.DataFrame()
             return pd.DataFrame()
+        if len(self.genes) == 0:
+            print('No genes for API request')
+            self.go_results = pd.DataFrame()
+            return pd.DataFrame()
 
         resp = requests.get(url)
+
         resp_obj = json.loads(resp.content)
 
         results = {'number_in_list': [],
@@ -278,8 +283,10 @@ class BOCC:
         ds = self.summarize_disease_associations()
         res['max_norm_disease_specificity'].append(ds[1] / len(self.genes))
         # comma separated list of cells with max normalized disease specificity
-        res['max_norm_disease_comma_sep_string'].append(','.join(ds[0]))
-
+        if len(ds[0]) == 0:
+            res['max_norm_disease_comma_sep_string'].append(','.join(['No Associated Disease']))
+        else:
+            res['max_norm_disease_comma_sep_string'].append(','.join(ds[0]))
         return pd.DataFrame(res)
 
 
@@ -357,7 +364,6 @@ def summarize_clusters(clusters: typing.List[BOCC], p_tresh: float = 0.000003) -
     df = None
     for c in clusters:
         d = c.get_summary_stats(p_tresh)
-        print(d['cluster_id'])
         if df is None:
             df = d
         else:
