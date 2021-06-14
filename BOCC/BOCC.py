@@ -349,6 +349,7 @@ def summarize_clusters(clusters: typing.List[BOCC], p_tresh: float = 0.000003) -
     df = None
     for c in clusters:
         d = c.get_summary_stats(p_tresh)
+        print(d['cluster_id'])
         if df is None:
             df = d
         else:

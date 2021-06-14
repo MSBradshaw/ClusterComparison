@@ -30,4 +30,4 @@ def get_args():
 args = get_args()
 coms = load_clusters(args.coms)
 df = summarize_clusters(coms, args.pval)
-df.to_csv(args.out, sep='\t', index_label=False)
+df.to_csv(args.out, sep='\t', index=False)
