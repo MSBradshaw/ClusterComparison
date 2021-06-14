@@ -14,19 +14,49 @@ Move into the repo
 
 `cd ClusterComparison/`
 
-Set up the conda enviroment (see [here](https://conda.io/projects/conda/en/latest/user-guide/install/index.html) for how to install conda)
+Create an environment
 
-`conda config --append channels conda-forge`
+`python3 -m venv env`
 
-`conda create --name bocc --file requirements.txt`
+Start the enviroment
+`source env/bin/activate`
 
-Start the conda enviroment
-
-`conda activate bocc`
+Install requirements
+`python3 -m pip install -r requirements.txt`
 
 Uncompress data
 
 `gunzip BOCC/all_genes_info.json.gz`
+
+## CESNA
+
+### Install SNAP
+
+`git clone git@github.com:snap-stanford/snap.git`
+
+`cd snap/examples/cesna`
+
+`make`
+
+### Run CENSA
+
+Change `-nt` to the number of threads to be used for parallelization
+
+`./cesna -i ../../../Data/HPO_String_edgelist.numbered.tsv -l ../../../Data/HPO_String_edgelist.nodenames.tsv -c -1 -nt 1 -o hpo_string_cesna`
+
+Create community file with CESNA results
+
+`python Algorithms/number_cesna_results.py --cesna_res snap/examples/cesna/cmtyvv.txt --output cesna_coms.txt --node_names Data/HPO_String_edgelist.nodenames.tsv`
+
+## Greedy, Walk Track and Belief
+
+`belief.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
+
+`python Algorithms/greedy.py --edgelist Data/HPO_String_edgelist.tsv --out greedy_coms.txt`
+
+## Infomap
+
+`--edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
 
 ## How to use BOCC to summarize a set of communities
 

@@ -27,6 +27,6 @@ G = nx.read_edgelist(args.edgelist)
 coms = algorithms.belief(G)
 
 with open(args.output, 'w') as outfile:
-    for i, com in enumerate(coms):
+    for i, com in enumerate(coms.communities):
         outfile.write('\t'.join([str(i)] + com))
         outfile.write('\n')

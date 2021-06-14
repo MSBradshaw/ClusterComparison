@@ -10,4 +10,6 @@ Data/
 snap/
 coms/
 results/
-
+env/
+*.results
+*coms.txt

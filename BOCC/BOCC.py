@@ -70,6 +70,11 @@ class BOCC:
         url = 'http://pantherdb.org/services/oai/pantherdb/enrich/overrep?geneInputList=' + g_string + \
               '&organism=9606&annotDataSet=GO%3A0008150&enrichmentTestType=FISHER&correction=FDR'
 
+        if len(self.genes) > 10000:
+            print('Too many genes for API request')
+            self.go_results = pd.DataFrame()
+            return pd.DataFrame()
+
         resp = requests.get(url)
         resp_obj = json.loads(resp.content)
 
@@ -255,6 +260,9 @@ class BOCC:
         res['HPO_ratio'].append((len(self.members) - len(self.get_genes())) / len(self.members))
         # go enrichment, # terms with p-value > p_tresh
         go_df = self.go_enrichment()
+        if go_df.shape[0] == 0:
+            print('No results from GO Enrichment to summarize')
+            return pd.DataFrame()
         go_df = go_df[go_df['pValue'] < p_tresh]
         res['num_sig_go_enrichment_terms'].append(go_df.shape[0])
         # go enrichment, comma separated string of terms with p-value > p_tresh
