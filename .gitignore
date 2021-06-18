@@ -13,3 +13,9 @@ results/
 env/
 *.results
 *coms.txt
+
+.Rproj.user
+ClusterComparison.Rproj
+AnalyzeResults/BOCC_Results/
+Results/
+
