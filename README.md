@@ -60,10 +60,12 @@ Create community file with CESNA results
 
 ## How to use BOCC to summarize a set of communities
 
-`python BOCC/summarize_clusters.py --coms Data/three_communities.txt --pval 0.00005 --out results.tsv`
+`python BOCC/summarize_clusters.py --coms Data/three_communities.txt --alpha 0.05 --mg2 Data/mygene2_gene_hpo_family.tsv --out results.tsv`
 
 `--coms` should be a tab seporated file where each row represents a community. The first item in each row needs to be the cluster id/name, all subsequent items are members of the community
 
-`--pval` should be a floating point number used as the threshold for significance in GO enrichment (default 0.00003)
+`--mg2` path to a tab seporated files with the MyGene2 data with the follow columns: gene, HPO, family ID
+
+`--alpha` floating point number 0-1, threshold for signifiance in FDR correction for GO enrichment (default 0.05)
 
 `--out` name of the output file, should end in `.tsv`
