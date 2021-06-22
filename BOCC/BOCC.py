@@ -4,7 +4,7 @@ import pandas as pd
 import typing
 import matplotlib.pyplot as plt
 import warnings
-
+from statsmodels.stats.multitest import fdrcorrection
 
 class BOCC:
     """
@@ -245,16 +245,17 @@ class BOCC:
         cell_type_counts = self.get_cell_type_counts(all_genes_dict)
         return get_max_in_dict(cell_type_counts)
 
-    def get_summary_stats(self, p_tresh: float = 0.000003) -> pd.DataFrame:
+    def get_summary_stats(self, mygene2_file: str, alpha: float = 0.05) -> pd.DataFrame:
         """
         This function returns a pd.DataFrame with information summarizing the biological relevance of a cluster
         :return:
         """
         res = {'cluster_id': [], 'cluster_size': [], 'gene_ratio': [], 'HPO_ratio': [], 'num_sig_go_enrichment_terms': [],
-               'sig_go_enrichment_p_vals': [],
+               'sig_go_enrichment_p_vals': [],'sig_go_enrichment_fdr_corrected_p_vals': [],
                'sig_go_enrichment_terms': [], 'go_sig_threshold': [], 'max_norm_cell_type_specificity': [],
                'max_norm_cell_type_comma_sep_string': [], 'max_norm_disease_specificity': [],
-               'max_norm_disease_comma_sep_string': []}
+               'max_norm_disease_comma_sep_string': [],'mg2_pairs_count':[],'mg2_not_pairs_count':[],
+               'mg2_portion_families_recovered':[]}
         # cluster id/name
         res['cluster_id'].append(self.name)
         # number size of cluster
@@ -265,15 +266,24 @@ class BOCC:
         res['HPO_ratio'].append((len(self.members) - len(self.get_genes())) / len(self.members))
         # go enrichment, # terms with p-value > p_tresh
         go_df = self.go_enrichment()
+
         if go_df.shape[0] == 0:
             print('No results from GO Enrichment to summarize')
             return pd.DataFrame()
-        go_df = go_df[go_df['pValue'] < p_tresh]
+
+        # FDR correction
+        rejected_null, pvals = fdrcorrection(list(go_df['pValue']), alpha=alpha)
+        # add FDR correction to the results df
+        go_df['significant'] = rejected_null
+        go_df['fdr_pVale'] = pvals
+
+        go_df = go_df[go_df['significant'] == True]
         res['num_sig_go_enrichment_terms'].append(go_df.shape[0])
         # go enrichment, comma separated string of terms with p-value > p_tresh
         res['sig_go_enrichment_p_vals'].append(','.join([str(x) for x in go_df['pValue']]))
+        res['sig_go_enrichment_fdr_corrected_p_vals'].append(','.join([str(x) for x in go_df['fdr_pVale']]))
         res['sig_go_enrichment_terms'].append(','.join([str(x) for x in go_df['id']]))
-        res['go_sig_threshold'].append(p_tresh)
+        res['go_sig_threshold'].append(alpha)
         # max normalized cell type specificity value
         cts = self.summarize_cell_type_specificity()
         res['max_norm_cell_type_specificity'].append(cts[1] / len(self.genes))
@@ -287,7 +297,48 @@ class BOCC:
             res['max_norm_disease_comma_sep_string'].append(','.join(['No Associated Disease']))
         else:
             res['max_norm_disease_comma_sep_string'].append(','.join(ds[0]))
+        pc, npc, portion_recovered = self.mygene2_stats(mygene2_file)
+        res['mg2_pairs_count'].append(pc)
+        res['mg2_not_pairs_count'].append(npc)
+        res['mg2_portion_families_recovered'].append(portion_recovered)
         return pd.DataFrame(res)
+
+    def mygene2_stats(self, mygene2_file: str):
+        """
+
+        :param mygene2_file: path to tab separated file with columns: gene, HPO, familyID
+        :return:
+        """
+        pairs_count = 0
+        no_pairs_count = 0
+        family_pairs_no_pairs = {}
+        for line in open(mygene2_file,'r'):
+            row = line.strip().split()
+            gene = row[0]
+            hpo = row[1]
+            family = row[2]
+            if family not in family_pairs_no_pairs:
+                family_pairs_no_pairs[family] = {'pairs':[],'not_pairs':[]}
+            if gene in self.members and hpo in self.members:
+                family_pairs_no_pairs[family]['pairs'].append((gene,hpo))
+                pairs_count += 1
+            else:
+                family_pairs_no_pairs[family]['not_pairs'].append((gene, hpo))
+                no_pairs_count += 1
+        #total number of apirs
+        print('*************************')
+        print(pairs_count)
+        print(no_pairs_count)
+        # count number of family with > 50% pairs
+        majority_pair_fams = []
+        total_num_fams = 0
+        for fam in family_pairs_no_pairs.keys():
+            total_num_fams += 1
+            if len(family_pairs_no_pairs[fam]['pairs']) > len(family_pairs_no_pairs[fam]['not_pairs']):
+                majority_pair_fams.append(fam)
+        print(len(majority_pair_fams) / total_num_fams)
+        print('*************************')
+        return pairs_count, no_pairs_count, len(majority_pair_fams) / total_num_fams
 
 
 def get_max_in_dict(d):
@@ -354,7 +405,7 @@ def plot_basic_com_stats(coms: typing.List[BOCC], output: str = None, logx: bool
     return results
 
 
-def summarize_clusters(clusters: typing.List[BOCC], p_tresh: float = 0.000003) -> pd.DataFrame:
+def summarize_clusters(clusters: typing.List[BOCC], mygene2_file: str, alpha: float = 0.05) -> pd.DataFrame:
     """
 
     :param clusters: list of BOCC objects
@@ -363,9 +414,10 @@ def summarize_clusters(clusters: typing.List[BOCC], p_tresh: float = 0.000003) -
     """
     df = None
     for c in clusters:
-        d = c.get_summary_stats(p_tresh)
+        d = c.get_summary_stats(mygene2_file, alpha)
         if df is None:
             df = d
         else:
             df = pd.concat([df, d])
     return df
+
