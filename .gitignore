@@ -12,7 +12,7 @@ coms/
 results/
 env/
 *.results
-*coms.txt
+*coms*.txt
 *.tsv
 .Rproj.user
 ClusterComparison.Rproj

@@ -50,9 +50,12 @@ def find_communities(G):
     return communities
 
 # args = get_args()
-el = 'Data/HPO_String_edgelist.numbered.tsv'
-out = 'infomap_coms.txt'
-names = 'Data/HPO_String_edgelist.nodenames.tsv'
+el = 'Data/HPO_String_edgelist_june_22_2021.numbered.tsv'
+out = 'infomap_coms_june_22_2021.txt'
+names = 'Data/HPO_String_edgelist_june_22_2021.nodenames.tsv'
+# el = args.edgelist
+# out = args.output
+# names = args.names
 num2name = {}
 for line in open(names,'r'):
     row = line.strip().split('\t')
