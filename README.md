@@ -69,3 +69,17 @@ Create community file with CESNA results
 `--alpha` floating point number 0-1, threshold for signifiance in FDR correction for GO enrichment (default 0.05)
 
 `--out` name of the output file, should end in `.tsv`
+
+## Plot Communities of interest
+
+`python AnalyzeResults/plot_com.py --edgelist Data/HPO_String_edgelist_june_22_2021.tsv --all_coms all_june_22_coms.txt --algo walktrap --com 84 --output walktrap_84.png`
+
+`--edgelist` path to edgelist of the whole network
+
+`--all_coms` path to file with all communities each row formatted like: algorithm \t community_id \t member1 \t member2 ...
+
+`--algo` name of the algorithm of interst
+
+`--com` community id of interst
+
+`--output` where to save the figure
