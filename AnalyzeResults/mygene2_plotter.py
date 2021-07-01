@@ -73,5 +73,6 @@ axs[0][0].set_xticks([])
 axs[1][1].set_yticklabels([])
 axs[1][0].set_xlabel('Num. MyGene2 Pairs in Com')
 axs[1][0].set_ylabel('Portion of MyGene2\nPatients Rediscovered')
+
 plt.savefig('Figures/mygene2_scatter.png', bbox_inches='tight', dpi=600)
 plt.show()

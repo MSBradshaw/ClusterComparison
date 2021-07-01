@@ -326,9 +326,6 @@ class BOCC:
                 family_pairs_no_pairs[family]['not_pairs'].append((gene, hpo))
                 no_pairs_count += 1
         #total number of apirs
-        print('*************************')
-        print(pairs_count)
-        print(no_pairs_count)
         # count number of family with > 50% pairs
         majority_pair_fams = []
         total_num_fams = 0
@@ -336,9 +333,7 @@ class BOCC:
             total_num_fams += 1
             if len(family_pairs_no_pairs[fam]['pairs']) > len(family_pairs_no_pairs[fam]['not_pairs']):
                 majority_pair_fams.append(fam)
-        print(len(majority_pair_fams) / total_num_fams)
-        print('*************************')
-        return pairs_count, no_pairs_count, len(majority_pair_fams) / total_num_fams
+        return pairs_count, no_pairs_count, len(majority_pair_fams) / total_num_fams, family_pairs_no_pairs
 
 
 def get_max_in_dict(d):
