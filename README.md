@@ -69,3 +69,35 @@ Create community file with CESNA results
 `--alpha` floating point number 0-1, threshold for signifiance in FDR correction for GO enrichment (default 0.05)
 
 `--out` name of the output file, should end in `.tsv`
+
+## Source Files:
+
+`hp_2015_week_46.obo` taken from https://github.com/drseb/HPO-archive/blob/master/2014-2015/2015_week_46/hpo/artefacts/hp.obo.gz
+
+`ALL_SOURCES_ALL_FREQUENCIES_diseases_to_genes_to_phenotypes_12_2015.txt`  downloaded from https://github.com/drseb/HPO-archive/blob/master/hpo.annotations.monthly/2015-12-01_00-00-05/archive/annotation/ALL_SOURCES_ALL_FREQUENCIES_diseases_to_genes_to_phenotypes.txt.gz
+
+Old school string
+
+http://string91.embl.de/newstring_cgi/show_download_page.pl?UserId=fcQWm48WiULD&sessionId=PJ_uFqbyyWmH
+
+protein.links.v9.1.txt downloaded from http://string91.embl.de/newstring_download/protein.links.v9.1.txt.gz
+
+Homo Spanien only
+
+`9606.protein.links.v9.1.txt` http://string91.embl.de/newstring_download/protein.links.v9.1/9606.protein.links.v9.1.txt.gz
+
+`9606.protein.links.detailed.v9.1.txt` from http://string91.embl.de/newstring_download/protein.links.detailed.v9.1/9606.protein.links.detailed.v9.1.txt.gz
+
+Modern String
+
+`9606.protein.info.v11.0.txt` from https://stringdb-static.org/download/protein.info.v11.0/9606.protein.info.v11.0.txt.gz on July 8 2021
+
+`9606.protein.links.v11.0.txt` from https://stringdb-static.org/download/protein.links.v11.0/9606.protein.links.v11.0.txt.gz on July 8 2021
+
+Modern HPO
+
+`hp_July_8_2021.obo` from http://purl.obolibrary.org/obo/hp.obo on July 8 2021
+
+`genes_to_phenotype.txt` from  http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt on July 8 2021
+
+
