@@ -57,6 +57,4 @@ with open('Data/String_HPO_2015.edgelist', 'w') as outfile:
         outfile.write(row[1])
         outfile.write('\n')
 
-# remove doubled edges
 
-# remove circular edges
