@@ -1,0 +1,199 @@
+---
+title: "BOCC Visualization"
+author: "Connor Gibbs"
+date: "6/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+```{r, include = FALSE}
+library(purrr)
+library(dplyr)
+library(igraph)
+library(ggplot2)
+source('AnalyzeResults/utilities/read_write.R')
+source('AnalyzeResults/utilities/wrangle.R')
+source('AnalyzeResults/utilities/plot.R')
+```
+
+## Data
+
+```{r}
+bocc <- read_BOCCResults(path = 'Results/BOCC_Results')
+
+stats2plot <-
+  c(
+    'cluster_size',
+    'gene_ratio',
+    'HPO_ratio',
+    'num_sig_go_enrichment_terms',
+    'max_norm_cell_type_specificity',
+    'max_norm_cell_type_comma_sep_string',
+    'max_norm_disease_specificity',
+    'max_norm_disease_comma_sep_string'
+  )
+
+df <- bocc %>%
+  create_stats_df(., stats2plot) %>%
+  dplyr::mutate(., dplyr::across(c('gene_ratio', 'HPO_ratio'), ~round(.x, 3)))
+```
+
+## Cluster Sizes
+
+```{r}
+df %>%
+  group_by(method) %>%
+  summarize(
+    .,
+    n = length(cluster_id),
+    min_m = min(cluster_size),
+    mean_m = mean(cluster_size),
+    sd_m = sd(cluster_size),
+    max_m = max(cluster_size),
+    sum_m = sum(cluster_size)
+  ) 
+  # %>%
+  # kableExtra::kable(.,
+  #                   format = 'latex',
+  #                   digits = 2,
+  #                   booktabs = TRUE) %>%
+  # kableExtra::kable_styling(position = 'center') %>%
+  # kableExtra::add_header_above(., list(' ' = 2, 'cluster size' = 5))
+```
+
+### Cell and Disease Specificity
+
+On a natural scale...
+
+```{r}
+p1 <- ggplot(
+  df %>%
+    dplyr::filter(., cluster_size > 1),
+  aes(
+    x = max_norm_cell_type_specificity,
+    y = max_norm_disease_specificity,
+    color = method,
+    label = cluster_id,
+    label2 = cluster_size,
+    label3 = num_sig_go_enrichment_terms,
+    label4 = gene_ratio,
+    label5 = HPO_ratio,
+    label6 = max_norm_cell_type_comma_sep_string,
+    label7 = max_norm_disease_comma_sep_string,
+  )
+) +
+  geom_point(alpha = 0.5, position = 'jitter') +
+  scale_color_brewer('method', palette = 'Set1') +
+  labs(x = 'cell type specificity', y = 'disease type specificity') +
+  theme_bw() +
+  theme(legend.position = 'bottom',
+        legend.direction = 'horizontal',
+        legend.box = 'vertical')
+p1
+ggsave('AnalyzeResults/figs/bocc_results.png', width = 5, height = 5)
+```
+
+On a log-log scale...
+
+```{r}
+p2 <- p1 + 
+  scale_x_log10(
+    bquote(~log[10]('cell specificity')),
+    breaks = scales::trans_breaks("log10", function(x) 10^x),
+    minor_breaks = log10_minor_break(),
+    labels = scales::trans_format("log10", scales::math_format(10^.x))
+  ) +
+  scale_y_log10(
+    bquote(~log[10]('disease specificity')),
+    breaks = scales::trans_breaks("log10", function(x) 10^x),
+    minor_breaks = log10_minor_break(),
+    labels = scales::trans_format("log10", scales::math_format(10^.x))
+  ) +
+  annotation_logticks()
+p2
+ggsave('AnalyzeResults/figs/bocc_results_loglog.png', width = 5, height = 5)
+```
+
+As a widget...
+
+```{r}
+p1 <- p1 +
+  theme(legend.position = 'bottom')
+plotly::ggplotly(p1)
+```
+
+### Deep Dive
+
+We'll look into the communities with high specificity ($> 0.50$).
+
+```{r}
+deep_dive <- df %>%
+  dplyr::filter(., (max_norm_cell_type_specificity > 0.5 | 
+                  max_norm_disease_specificity > 0.5) & cluster_size > 1) %>%
+  dplyr::select(., method:cluster_size, max_norm_cell_type_specificity, 
+                max_norm_disease_specificity, dplyr::everything())
+DT::datatable(deep_dive, options = list(pageLength = 5))
+
+deep_dive %>%
+  dplyr::select(., method, cluster_id) %>%
+  readr::write_csv(., 'Results/promising_clusters_june_29_2021.csv')
+```
+
+#### Walktrap
+
+I'll be investigating the cluster's identified by `cluster_id` `r sort(deep_dive$cluster_id[stringr::str_detect(deep_dive$method, 'walktrap')])`.
+
+```{r, include=FALSE}
+# data
+comms <- 'Results/Communities' %>%
+  read_Communities() %>%
+  dplyr::bind_rows()
+
+G <-
+  read_graph(edgelist = 'Data/HPO_String_edgelist_june_22_2021.numbered.tsv',
+             nodes = 'Data/HPO_String_edgelist_june_22_2021.nodenames.tsv',
+             communities = 'Results/Communities')
+
+# function to summarize community
+summarize_cluster <- function(G, method, cluster_id, plot = FALSE) {
+  mems <- igraph::V(G)$communities %>%
+    dplyr::bind_rows() %>%
+    dplyr::filter(., stringr::str_detect(method, !!method), cluster_id == !!cluster_id) %>%
+    dplyr::pull(node)
+  
+  sG <- igraph::induced.subgraph(G, vids = V(G)[which(V(G)$node %in% mems)])
+  
+  if(plot){
+    if(igraph::vcount(sG) < 1000){
+      plot_graph(sG, legend = FALSE, vertex.label.color = 'black')
+    }else{
+      warning('No plot produced. Too many nodes.')
+    }
+  }
+  
+  return(list(sG = sG,
+              n = vcount(sG),
+              m = ecount(sG)))
+}
+```
+
+```{r}
+ids <- sort(deep_dive$cluster_id[stringr::str_detect(deep_dive$method, 'walktrap')])
+results <- list()
+results$walktrap <- map(ids, ~summarize_cluster(G = G, method = 'walktrap', cluster_id = .x, plot = TRUE))
+```
+
+#### Infomap
+
+I'll be investigating the clusters identified by `cluster_id` `r sort(deep_dive$cluster_id[stringr::str_detect(deep_dive$method, 'infomap')])`.
+
+```{r}
+ids <- sort(deep_dive$cluster_id[stringr::str_detect(deep_dive$method, 'infomap')])
+results$infomap <- map(ids, ~summarize_cluster(G = G, method = 'infomap', cluster_id = .x, plot = TRUE))
+```

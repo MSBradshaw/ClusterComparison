@@ -1,0 +1,76 @@
+---
+title: "Meeting for 6/22"
+author: "Connor Gibbs"
+date: "6/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(purrr)
+library(dplyr)
+library(igraph)
+```
+
+```{r, include=FALSE}
+source('AnalyzeResults/utilities/read_write.R')
+```
+
+## Identified Communities
+
+The result is a list of size $m$ where $m$ is the number of methods used. Each element of the list maintains three columns: `method`, `community`, and `member`. The method describes the clustering method. The community is the identifier created in Python, and the member describes the node, be it a gene or HPO. The elements of the list can be joined together with `dplyr::bind_rows()`. If a member has multiple rows, that means it is a member of multiple communities for at least one overlapping community detection method.
+
+```{r}
+comms <- read_Communities('Results/Communities')
+head(comms$cesna)
+```
+
+## BOCC Results
+
+The result is a list of size $m$ where $m$ is the number of methods used. Each element of the list is a data frame where comma separated elements are saved as a list. Each row summarizes a particular community with an identifier given by `cluster_id`. 
+
+```{r}
+bocc <- read_BOCCResults('Results/BOCC_Results')
+head(bocc$cesna)
+```
+
+## Graph
+
+The result is an `igraph` object where there are node attributes for the name of the node (`name`), the Python node ID (`node`), indicator of whether the node is a gene (`gene`), and a data frame of the corresponding communities (`communities`).
+
+```{r}
+G <-
+  read_graph(edgelist = 'Data/HPO_String_edgelist_june_22_2021.numbered.tsv',
+             nodes = 'Data/HPO_String_edgelist_june_22_2021.nodenames.tsv',
+             communities = 'Results/Communities')
+vertex_attr_names(G)
+
+V(G)[V(G)$node %in% c(7, 12000)]$name
+V(G)[V(G)$node %in% c(7, 12000)]$gene
+V(G)[V(G)$node %in% c(7, 12000)]$communities
+```
+
+### Discussion
+
+Why is the graph a multi-graph? Do the multiple edges tell us anything biologically meaningful or just an artifact of how the graph is constructed?
+
+*solved*
+
+```{r}
+el <- 'Data/HPO_String_edgelist_june_22_2021.numbered.tsv' %>%
+  readr::read_delim(., delim = '\t', col_names = FALSE) %>%
+  purrr::set_names(., c('from', 'to'))
+
+# sort the edges and remove duplicates
+el_sort <- swap_if(el, c('from', 'to'), c('from', 'to'))
+nrow(dplyr::distinct(el_sort))
+nrow(el)
+```
+
+Why are there self loops? Are these loops biologically meaningful or an artifact of the data preparation process?
+
+```{r}
+dplyr::filter(el, from == to)
+```

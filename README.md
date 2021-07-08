@@ -70,6 +70,20 @@ Create community file with CESNA results
 
 `--out` name of the output file, should end in `.tsv`
 
+## Plot Communities of interest
+
+`python AnalyzeResults/plot_com.py --edgelist Data/HPO_String_edgelist_june_22_2021.tsv --all_coms all_june_22_coms.txt --algo walktrap --com 84 --output walktrap_84.png`
+
+`--edgelist` path to edgelist of the whole network
+
+`--all_coms` path to file with all communities each row formatted like: algorithm \t community_id \t member1 \t member2 ... 
+
+`--algo` name of the algorithm of interst
+
+`--com` community id of interst
+
+`--output` where to save the figure
+
 ## Source Files:
 
 `hp_2015_week_46.obo` taken from https://github.com/drseb/HPO-archive/blob/master/2014-2015/2015_week_46/hpo/artefacts/hp.obo.gz
@@ -99,5 +113,4 @@ Modern HPO
 `hp_July_8_2021.obo` from http://purl.obolibrary.org/obo/hp.obo on July 8 2021
 
 `genes_to_phenotype.txt` from  http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt on July 8 2021
-
 

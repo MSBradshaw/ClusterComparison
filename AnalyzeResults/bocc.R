@@ -1,9 +1,9 @@
 library(purrr)
 library(dplyr)
 library(ggplot2)
-source('AnalyzeResults/utilities-readwrite.R')
-source('AnalyzeResults/utilities-wrangle.R')
-source('AnalyzeResults/utilities-plot.R')
+source('AnalyzeResults/utilities/read_write.R')
+source('AnalyzeResults/utilities/wrangle.R')
+source('AnalyzeResults/utilities/plot.R')
 
 bocc <- read_BOCCResults(path = 'Results/BOCC_Results')
 
@@ -58,7 +58,7 @@ p2 <- ggplot(
   theme(legend.position = 'bottom',
         legend.direction = 'horizontal',
         legend.box = 'vertical')
-ggsave('AnalyzeResults/BOCC_Results/bocc_results.png', width = 5, height = 5)
+ggsave('AnalyzeResults/figs/bocc_results.png', width = 5, height = 5)
 
 p3 <- p2 + 
   scale_x_log10(
@@ -74,7 +74,7 @@ p3 <- p2 +
     labels = scales::trans_format("log10", scales::math_format(10^.x))
   ) +
   annotation_logticks()
-ggsave('AnalyzeResults/BOCC_Results/bocc_results_loglog.png', width = 5, height = 5)
+ggsave('AnalyzeResults/figs/bocc_results_loglog.png', width = 5, height = 5)
 
 plotly::ggplotly(p2)
 
