@@ -56,7 +56,7 @@ Create community file with CESNA results
 
 ## Infomap
 
-`--edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
+`python Algorithms/cluster_infomap.py --edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
 
 ## How to use BOCC to summarize a set of communities
 
