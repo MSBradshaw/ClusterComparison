@@ -96,3 +96,30 @@ read_graph <- function(edgelist, nodes, communities){
   
   return(G)
 }
+
+file <- 'Data/raw_data/genes_to_phenotype.txt'
+read_genehpo_links <- function(file){
+  `%>%` <- dplyr::`%>%`
+  
+  con <- file(file, 'r')
+  first_line <- readLines(con, n = 1)
+  close(con)
+  
+  first_line <- first_line %>%
+    stringr::str_remove(., '\\#Format:') %>%
+    stringr::str_squish() %>%
+    stringr::str_split(., pattern = '<tab>', simplify = TRUE) %>%
+    as.vector() %>%
+    janitor::make_clean_names(.)
+  
+  tsv_file <- file %>%
+    readr::read_tsv(., col_names = FALSE, skip = 1) %>%
+    setNames(., first_line)
+  
+  gene_first <- stringr::str_detect(names(tsv_file[,1]), 'gene')
+  if(gene_first){
+    dplyr::select(tsv_file, dplyr::starts_with('entrez'), dplyr::starts_with('hpo'), dplyr::starts_with('disease'))
+  }else{
+    dplyr::select(tsv_file, dplyr::starts_with('hpo'), dplyr::starts_with('entrez'), dplyr::starts_with('disease'))
+  }
+}
