@@ -24,4 +24,9 @@ meeting_20210719.Rmd
 - Find an example where pruning can substantially change the identified communities.
 
 meeting_20210727.Rmd
-- Try to pin down the effects of community discovery with a weighted graph, using Walktrap as an example.
+- Try to pin down the effects of community discovery with a weighted graph, using 
+  Walktrap as an example.
+- Look at distribution of the Jaccard index.
+- Find weighted communities that are not characterized by unweighted.
+- Find unweighted communities that are not easily characterized by weighted.
+
