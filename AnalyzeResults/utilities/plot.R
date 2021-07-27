@@ -1,3 +1,12 @@
+#' Add log10 minor breaks to a ggplot with ggplot2::scale_x/y_log10() activated.
+#'
+#' @param ... Added via a `+` in a `ggplot2` chain.
+#'
+#' @return A log10 plot with minor breaks.
+#' @export
+#'
+#' @examples
+#' ggplot2::ggplot() + ggplot2::scale_x_log10('x', minor_breaks = log10_minor_breaks())
 log10_minor_break <- function (...) {
   function(x) {
     minx <- floor(min(log10(x), na.rm = T)) - 1
@@ -12,6 +21,14 @@ log10_minor_break <- function (...) {
   }
 }
 
+#' A better implementation of `plot.igraph`.
+#'
+#' @param G An igraph object.
+#' @param legend `TRUE` or `FALSE` depending on whether `G` is heterogeneous and one would like a legend indicating node type.
+#' @param ... Any other `plot.igraph` options. See the [help guide](https://igraph.org/r/doc/plot.common.html) for more details.
+#'
+#' @return A plot.
+#' @export
 plot_graph <- function(G, legend = FALSE, ...) {
   V(G)$color <- purrr::map_chr(V(G)$gene + 1, ~RColorBrewer::brewer.pal(9, 'Set1')[.x])
   par(bg = NA, mar = c(0, 0, 0, 0) + 0.1)
