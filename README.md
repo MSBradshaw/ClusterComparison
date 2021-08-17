@@ -48,7 +48,7 @@ Create community file with CESNA results
 
 `python Algorithms/number_cesna_results.py --cesna_res snap/examples/cesna/cmtyvv.txt --output cesna_coms.txt --node_names Data/HPO_String_edgelist.nodenames.tsv`
 
-## Greedy, Walk Track and Belief
+## Greedy, Walk Trap and Belief
 
 `belief.py`, `greedy.py`, and `walktrap.py` are all run in the same manner
 
@@ -56,7 +56,7 @@ Create community file with CESNA results
 
 ## Infomap
 
-`--edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
+`python Algorithms/cluster_infomap.py --edgelist Data/HPO_String_edgelist.numbered.tsv --output infomap_coms.txt --nodenames Data/HPO_String_edgelist.nodenames`
 
 ## How to use BOCC to summarize a set of communities
 
