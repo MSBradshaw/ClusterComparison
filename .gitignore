@@ -11,3 +11,5 @@ snap/
 env/
 *.results
 *coms.txt
+Edgelists/
+Scratch/
