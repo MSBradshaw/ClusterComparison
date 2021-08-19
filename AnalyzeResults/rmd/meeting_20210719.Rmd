@@ -1,0 +1,163 @@
+---
+title: "Meeting for 7/19"
+author: "Connor Gibbs"
+date: "7/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(purrr)
+library(dplyr)
+library(igraph)
+library(ggplot2)
+library(igraphaid)
+```
+
+```{r, include=FALSE}
+source('AnalyzeResults/utilities/read_write.R')
+```
+
+# Graph Creation
+
+## Data
+
+```{r}
+g2h <- read_genehpo_links('Data/raw_data/genes_to_phenotype.txt')
+h2g <- read_genehpo_links('Data/raw_data/phenotype_to_genes.txt')
+```
+
+## Possible Weights
+
+```{r}
+g2h_dt <- g2h %>%
+  dplyr::group_by(., entrez_gene_id, entrez_gene_symbol, hpo_term_id, hpo_term_name) %>%
+  dplyr::summarise(., count = n(), diseases = list(disease_id_for_link)) %>%
+  ungroup()
+  
+g2h_dt %>%
+  dplyr::filter(count == 3)
+
+p1 <- ggplot(data = g2h_dt, aes(x = count)) +
+  geom_bar() +
+  labs(x = 'associated diseases', y = 'number of edges') +
+  scale_x_continuous(breaks = seq(0, 18, by = 2)) +
+  coord_flip() +
+  theme_bw()
+
+p2 <- ggplot(data = dplyr::filter(g2h_dt, count >= 8), aes(x = count)) +
+  geom_bar() +
+  labs(x = 'associated diseases', y = 'number of edges') +
+  scale_x_continuous(breaks = seq(8, 18, by = 2)) +
+  coord_flip() +
+  theme_bw()
+```
+
+```{r}
+nrow(g2h)
+nrow(g2h_dt)
+```
+
+## Possible Directionality
+
+```{r}
+nrow(h2g)
+h2g_dt <- h2g %>%
+  dplyr::group_by(., hpo_id, hpo_label, entrez_gene_id, entrez_gene_symbol) %>%
+  dplyr::summarise(., count = n(), diseases = list(disease_id_for_link)) %>%
+  ungroup()
+nrow(h2g_dt)
+```
+
+```{r}
+h2g_collapse <- h2g_dt %>%
+  dplyr::rename(hpo_term_id = hpo_id, hpo_term_name = hpo_label) %>%
+  dplyr::select(hpo_term_id, entrez_gene_symbol)
+g2h_collapse <- g2h_dt %>%
+  dplyr::select(hpo_term_id, entrez_gene_symbol)
+
+dt <- dplyr::bind_rows(g2h_collapse, h2g_collapse, .id = 'source') %>%
+  dplyr::mutate(., source = ifelse(source == '1', 'G2H', 'H2G')) %>%
+  dplyr::group_split(., hpo_term_id, entrez_gene_symbol) %>%
+  purrr::map_dfr(., ~{
+    if(nrow(.x) > 1){
+      .x$source <- 'Both'
+      .x[1,]
+    }
+    .x
+  }) %>%
+  dplyr::distinct()
+
+table(dt$source)
+```
+
+# Effects of Pruning
+
+```{r}
+quasi_tree <- RcppAlgos::comboGeneral(6, 2) %>%
+  as.data.frame() %>%
+  setNames(., c('from', 'to')) %>%
+  filter(., from < to,!(from %in% c(4, 5, 6)),!(from == 2 &
+                                                  to == 3))
+add_ons <- data.frame(from = c(1, 1, 2, 2, 3, 3, 
+                               11, 12,
+                               rep(2:6, times = 2)),
+                      to = c(2, 3, 5, 6, 4, 5, 
+                             17, 18,
+                             rep(c(7, 13), each = length(2:6))))
+Gdf <-
+  dplyr::bind_rows(list(add_ons, quasi_tree + 6, quasi_tree + 2 * 6))
+
+G1 <- igraph::graph_from_data_frame(Gdf, directed = FALSE)
+igraphaid::plot_graph(G1)
+igraphaid::plot_adj(G1)
+igraph::cluster_infomap(G1)
+igraph::cluster_label_prop(G1)
+igraph::cluster_walktrap(G1)
+igraph::cluster_fast_greedy(G1)
+igraph::cluster_spinglass(G1)
+
+G2 <- igraph::induced_subgraph(G1, vids = V(G1)[!V(G1)$name %in% as.character(1:6)])
+igraphaid::plot_graph(G2)
+igraphaid::plot_adj(G2)
+igraph::cluster_infomap(G2)
+igraph::cluster_label_prop(G2)
+igraph::cluster_walktrap(G2)
+igraph::cluster_fast_greedy(G2)
+igraph::cluster_spinglass(G2)
+```
+
+```{r}
+quasi_tree <- RcppAlgos::comboGeneral(7, 2) %>%
+  as.data.frame() %>%
+  setNames(., c('from', 'to')) %>%
+  filter(., from < to, !(from %in% c(4, 5, 6)))
+add_ons <- data.frame(from = c(1, 1, 1, 
+                               5, 6, 5, 6,
+                               rep(2:4, each = 4)
+                               ),
+                      to = c(2, 3, 4, 
+                             13, 14, 14, 13,
+                             rep(c(5, 6, 12, 13), times = 3)
+                             ))
+Gdf <-
+  dplyr::bind_rows(list(add_ons, quasi_tree + 4, quasi_tree + 11))
+
+G1 <- igraph::graph_from_data_frame(Gdf, directed = FALSE)
+igraphaid::plot_graph(G1)
+igraphaid::plot_adj(G1)
+igraph::cluster_infomap(G1)
+igraph::cluster_walktrap(G1)
+igraph::cluster_fast_greedy(G1)
+
+G2 <- igraph::induced_subgraph(G1, vids = V(G1)[!V(G1)$name %in% as.character(1:4)])
+igraphaid::plot_graph(G2)
+igraphaid::plot_adj(G2)
+igraph::cluster_infomap(G2)
+igraph::cluster_walktrap(G2)
+igraph::cluster_fast_greedy(G2)
+
+```
+

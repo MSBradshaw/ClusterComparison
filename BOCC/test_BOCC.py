@@ -123,20 +123,24 @@ class ClusterTests(unittest.TestCase):
     def test_get_summary_stats(self):
         c = BOCC()
         c.add_members(EXAMPLE_MEMBERS, EXAMPLE_TYPES)
-        df = c.get_summary_stats(0.001)
+        df = c.get_summary_stats('Data/mygene2_gene_hpo_family.tsv')
         self.assertEqual(df.iloc[0, :]['cluster_size'], 4, 'Cluster size does not match expectation')
         self.assertEqual(df.iloc[0, :]['gene_ratio'], 0.75, 'gene ratio not as expected')
         self.assertEqual(df.iloc[0, :]['HPO_ratio'], 0.25, 'HPO ratio not as expected')
-        self.assertEqual(df.iloc[0, :]['num_sig_go_enrichment_terms'], 8, 'wrong number of expected significant terms')
-        self.assertEqual(df.iloc[0, :]['go_sig_threshold'], 0.001, 'wrong threshold for significance')
+        self.assertEqual(df.iloc[0, :]['num_sig_go_enrichment_terms'], 0, 'wrong number of expected significant terms')
+        self.assertEqual(df.iloc[0, :]['go_sig_threshold'], 0.05, 'wrong threshold for significance')
         self.assertEqual(df.iloc[0, :]['max_norm_cell_type_specificity'], 1/3, 'wrong max norm cell type specificity')
         self.assertEqual(df.iloc[0, :]['max_norm_disease_specificity'], 3/3, 'wrong max norm cell type specificity')
 
     def test_summarize_clusters(self):
         coms = load_clusters(SMALL_TEST_COMS)
-        df = summarize_clusters(coms)
+        df = summarize_clusters(coms, 'Data/mygene2_gene_hpo_family.tsv')
         self.assertEqual(df.shape[0], len(coms), 'Incorrect number of communities loaded')
-        self.assertEqual(df.shape[1], 12, 'Incorrect number of features')
+        self.assertEqual(df.shape[1], 16, 'Incorrect number of features')
+
+    def test_mygene2_stats(self):
+        coms = load_clusters(BIG_TEST_COMS)
+        coms[0].mygene2_stats('Data/mygene2_gene_hpo_family.tsv')
 
 
 if __name__ == '__main__':

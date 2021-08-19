@@ -1,0 +1,233 @@
+---
+title: "Meeting for 7/27"
+author: "Connor Gibbs"
+date: "7/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(purrr)
+library(dplyr)
+library(igraph)
+library(ggplot2)
+library(igraphaid)
+```
+
+```{r, include=FALSE}
+source('AnalyzeResults/utilities/read_write.R')
+source('AnalyzeResults/utilities/eval.R')
+source('AnalyzeResults/utilities/plot.R')
+```
+
+## Compare Unweighted Walktrap to Weighted Walktrap
+
+First, I will read in the weighted graph.
+
+```{r}
+G <-
+  read_graph(edgelist = 'Data/WeightedPhenotypicAbnormality/String_HPO_2015.weighted.phenotypic_branch.numbered.edgelist.txt',
+             nodes = 'Data/WeightedPhenotypicAbnormality/String_HPO_2015.weighted.phenotypic_branch.nodenames.txt',
+             communities = NULL)
+igraph::is_weighted(G)
+```
+
+Now, I will run the walktrap algorithm using the edge weights, keeping only communities with at least three members.
+
+```{r, echo=FALSE}
+# wt_comms <- igraph::cluster_walktrap(G)
+wt_comms <- readr::read_rds('Results/communities/PhenotypicAbnormality/walktrap.String_HPO_2015.weighted.phenotypic_branch.coms')
+wt_comms_list <- wt_comms$igraph_comms$membership %>%
+  data.frame(node = wt_comms$igraph_comms$names, community = .) %>%
+  dplyr::arrange(., community, node) %>%
+  dplyr::group_split(., community) %>%
+  purrr::map(., ~ .x$node) %>%
+  purrr::keep(., ~ length(.x) >= 3)
+# readr::write_rds(
+#   list(comms = wt_comms_list, igraph_comms = wt_comms),
+#   'Results/communities/PhenotypicAbnormality/walktrap.String_HPO_2015.weighted.phenotypic_branch.coms',
+#   compress = 'gz'
+# )
+```
+
+Now, I will pull in detected communities from the unweighted graph.
+
+```{r, echo=FALSE}
+## unweighted communities
+unwt_comms_list <- 'Results/communities/PhenotypicAbnormality' %>%
+  read_Communities() %>%
+  .$walktrap.String_HPO_2015 %>%
+  dplyr::group_split(., cluster_id) %>%
+  purrr::map(., ~.x$name) %>%
+  purrr::keep(., ~length(.x) >= 3)
+```
+Finally, I'll take a look at the number of communities and the distribution of community sizes:
+
+```{r, echo=FALSE}
+# number of weighted communities
+length(wt_comms_list)
+# number of unweighted communities
+length(unwt_comms_list)
+
+dt <- dplyr::bind_rows(
+  data.frame(method = 'weighted', 
+             nmembers = purrr::map_dbl(wt_comms_list, ~length(.x)), 
+             id = 1:length(wt_comms_list)),
+  data.frame(method = 'unweighted', 
+             nmembers = purrr::map_dbl(unwt_comms_list, ~length(.x)),
+             id = 1:length(unwt_comms_list))
+) %>%
+  dplyr::mutate(., label = ifelse(nmembers > 5000, id, ''))
+
+ggplot(data = dt, aes(x = method, y = nmembers, color = method)) +
+  geom_violin() +
+  geom_jitter(alpha = 0.6, position = position_jitter(0.2)) +
+  geom_text(label = dt$label) +
+  scale_y_log10(
+    bquote(~log[10]('number of members')),
+    breaks = scales::trans_breaks("log10", function(x) 10^x),
+    minor_breaks = log10_minor_break(),
+    labels = scales::trans_format("log10", scales::math_format(10^.x))
+  ) +
+  annotation_logticks() +
+  scale_color_brewer('', palette = 'Set1') +
+  labs(title = 'Number of Members in Walktrap Communities') +
+  theme_bw() +
+  theme(legend.position = 'none')
+ggsave('AnalyzeResults/figs/weighted-number-of-members.png', height = 4, width = 6, units = 'in')
+```
+
+And compare the overlap in the identified communities...
+
+```{r}
+jaccard <- avg_jaccard(A = wt_comms_list, B = unwt_comms_list)
+jaccard$avg # average over all pairs and matching direction
+
+# for each weighted community, find the unweighted community that maximized jaccard
+dt_wtu <- jaccard$grid %>%
+  dplyr::group_by(., A) %>%
+  dplyr::slice_max(., jaccard, with_ties = FALSE)
+
+dt_wtu %>%
+  DT::datatable(
+  .,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = c('copy', 'csv'),
+    lengthMenu = list(c(10, 25, 50, -1),
+                      c(10, 25, 50, "All"))
+  )
+) %>%
+  DT::formatRound(., columns = 'jaccard', digits = 2)
+
+p1 <- ggplot2::ggplot(data = dt_wtu, aes(x = jaccard)) +
+  geom_density() +
+  geom_rug(data = dt_wtu, aes(x = jaccard, y = 0), sides = 'b', position = 'jitter', alpha = 0.7) +
+  labs(x = 'maximum jaccard', y = 'density', 
+       title = 'Weighted to Unweighted') +
+  lims(y = c(0, 1.2)) +
+  theme_bw() +
+  theme(legend.position = 'none')
+
+# for each unweighted community, find the weighted community that maximized jaccard
+dt_utw <- jaccard$grid %>%
+  dplyr::group_by(., B) %>%
+  dplyr::slice_max(., jaccard, with_ties = FALSE)
+
+dt_utw %>%
+  DT::datatable(
+  .,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Blfrtip',
+    buttons = c('copy', 'csv'),
+    lengthMenu = list(c(10, 25, 50, -1),
+                      c(10, 25, 50, "All"))
+  )
+) %>%
+  DT::formatRound(., columns = 'jaccard', digits = 2)
+
+p2 <- ggplot2::ggplot(data = dt_utw, aes(x = jaccard)) +
+  geom_density() +
+  geom_rug(data = dt_utw, aes(x = jaccard, y = 0), sides = 'b', position = 'jitter', alpha = 0.7) +
+  labs(x = 'maximum jaccard', y = 'density', 
+       title = 'Unweighted to Weighted') +
+  lims(y = c(0, 1.2)) +
+  theme_bw() +
+  theme(legend.position = 'none')
+
+ggpubr::ggarrange(p1, p2) %>%
+  ggpubr::annotate_figure(.,
+                          top = ggpubr::text_grob(
+                            'Distribution of Maximal Jaccard',
+                            family = "sans",
+                            size = 14,
+                            face = 'bold'
+                          ))
+ggsave('AnalyzeResults/figs/distn-of-jaccard.png', width = 6, height = 4, units = 'in')
+rm(p1, p2)
+```
+
+This leads me to the following question: which communities are identified via the weighted graph but not the unweighted graph and at what cost?
+
+```{r}
+n <- nrow(dt_wtu)
+dt_wtu %>%
+  dplyr::filter(., jaccard %in% c(0, 1)) %>%
+  dplyr::group_by(., jaccard) %>%
+  dplyr::summarise(., n = n(), freq = n()/!!n)
+
+dt <- dt_wtu %>%
+  dplyr::filter(., jaccard == 0) %>%
+  dplyr::pull(A) %>%
+  purrr::map_dfr(., ~ {
+    comm <- as.vector(unlist(wt_comms_list[.x]))
+    tibble::tibble(id = .x,
+                   comm = comm,
+                   n = length(comm),
+                   nhpo = sum(stringr::str_sub(comm, 1, 3) == 'HP:'),
+                   ngene = sum(stringr::str_sub(comm, 1, 3) != 'HP:')) %>%
+      dplyr::mutate(., perc_gene = ngene/n, 
+                    perc_hpo = nhpo/n) %>%
+      tidyr::nest(., members = comm)
+  })
+
+# what is gained by using a weighted graph?
+gained <- dplyr::filter(dt, perc_gene > 0, perc_hpo > 0)
+DT::datatable(gained)
+
+dt <- 1:nrow(dt_utw) %>%
+  setdiff(., dt_wtu$B) %>%
+  purrr::map_dfr(., ~ {
+    comm <- as.vector(unlist(unwt_comms_list[.x]))
+    tibble::tibble(id = .x,
+                   comm = comm,
+                   n = length(comm),
+                   nhpo = sum(stringr::str_sub(comm, 1, 3) == 'HP:'),
+                   ngene = sum(stringr::str_sub(comm, 1, 3) != 'HP:')) %>%
+      dplyr::mutate(., perc_gene = ngene/n, 
+                    perc_hpo = nhpo/n) %>%
+      tidyr::nest(., members = comm)
+  })
+
+# what is lost by using a weighted graph?
+lost <- dplyr::filter(dt, perc_gene > 0, perc_hpo > 0)
+DT::datatable(lost)
+readr::write_rds(list(gain = gained, loss = lost), 'Data/WeightedPhenotypicAbnormality/gain_loss_weighted2unweighted.rds')
+```
+
+Now, which communities are identified via the unweighted graph but not the weighted graph and at what cost?
+
+```{r}
+n <- nrow(dt_utw)
+dt_utw %>%
+  dplyr::filter(., jaccard %in% c(0, 1)) %>%
+  dplyr::group_by(., jaccard) %>%
+  dplyr::summarise(., n = n(), freq = n()/!!n)
+
+# what is gained by not using a weighted graph?
+## Nothing... Could look at jaccard near 0
+```
