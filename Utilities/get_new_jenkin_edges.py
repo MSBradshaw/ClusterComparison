@@ -1,4 +1,4 @@
-string_hpo_el = "Data/String_HPO_2021.edgelist"
+string_hpo_el = "Edgelists/String_HPO_2021.all_hpo.edgelist.txt"
 old_jenkins_el = "Data/ALL_SOURCES_ALL_FREQUENCIES_diseases_to_genes_to_phenotypes_12_2015.txt"
 
 old_jenkins = set()
@@ -42,8 +42,8 @@ new_edges = [x for x in jenkins if x not in old_jenkins]
 
 with open('Data/new_jenkins_edges.tsv', 'w') as outfile:
     for pair in new_edges:
-        pair.replace("[", '').replace("]", '').replace("'", '').split(', ')
-        outfile.write(pair[0])
+        row = pair.replace("[", '').replace("]", '').replace("'", '').split(', ')
+        outfile.write(row[0])
         outfile.write('\t')
-        outfile.write(pair[1])
+        outfile.write(row[1])
         outfile.write('\n')

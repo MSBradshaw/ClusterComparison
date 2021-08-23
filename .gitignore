@@ -12,6 +12,9 @@ coms/
 results/
 env/
 *.results
+*coms.txt
+Edgelists/
+Scratch/
 *coms*.txt
 *.tsv
 .Rproj.user
@@ -19,4 +22,5 @@ ClusterComparison.Rproj
 AnalyzeResults/BOCC_Results/
 Results/
 Figures/
+Edgelists/
 AnalyzeResults/figs

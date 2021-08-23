@@ -84,6 +84,27 @@ Create community file with CESNA results
 
 `--output` where to save the figure
 
+## Compare to synthetic nulls
+
+### Snowball
+
+`python snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
+--output snowball.infomap.String_HPO_2015.phenotypic_branch.tsv
+--coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt
+--new_edges Data/new_jenkins_edges.tsv
+--reps 100`
+
+`--edgelist` tab separated edge list
+
+`--output` name of file to save the community to
+
+`--coms` file of communities and there members, each row is a com, first item is the com name, all others are members
+
+`--new_edges` file with new edges, tab separated
+
+`--reps` number of repitions, default = 100
+
+
 ## Source Files:
 
 `hp_2015_week_46.obo` taken from https://github.com/drseb/HPO-archive/blob/master/2014-2015/2015_week_46/hpo/artefacts/hp.obo.gz
