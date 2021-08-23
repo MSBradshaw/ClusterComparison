@@ -43,3 +43,29 @@ plot_graph <- function(G, legend = FALSE, ...) {
            border = NA)
   }
 }
+
+plot_subgraph <- function(G, vids, order = 1, ...) {
+  neighs <- vids %>%
+    igraph::neighborhood(G, nodes = ., order = order) %>%
+    purrr::reduce(., c) %>%
+    .$name %>%
+    unique()
+  sG <- igraph::induced_subgraph(G, vids = neighs)
+  V(sG)$color <- RColorBrewer::brewer.pal(9, 'Set1')[V(sG)$gene + 1]
+  V(sG)[!(V(sG)$name %in% vids) &
+          V(sG)$gene == 1]$color <- '#c7e6ff' # grey-blue
+  V(sG)[!(V(sG)$name %in% vids) &
+          V(sG)$gene == 0]$color <- '#fca9aa' # grey-red
+  V(sG)[V(sG)$name %in% vids]$vertex_label <-
+    V(sG)[V(sG)$name %in% vids]$name
+  V(sG)[!(V(sG)$name %in% vids)]$vertex_label <- NA
+  if(length(vids) > 8) V(sG)$vertex_label <- NA
+  par(bg = NA, mar = c(0, 0, 0, 0) + 0.1)
+  plot(
+    sG,
+    vertex.label = V(sG)$vertex_label,
+    vertex.color = V(sG)$color,
+    vertex.label.color = 'black',
+    ...
+  )
+}

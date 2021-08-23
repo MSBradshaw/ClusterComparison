@@ -1,0 +1,94 @@
+---
+title: "Meeting for 08/03"
+author: "Connor Gibbs"
+date: "7/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+library(purrr)
+library(dplyr)
+library(igraph)
+library(ggplot2)
+library(igraphaid)
+```
+
+```{r, include=FALSE}
+source('AnalyzeResults/utilities/read_write.R')
+source('AnalyzeResults/utilities/eval.R')
+source('AnalyzeResults/utilities/plot.R')
+```
+
+## Plot Communities Gained
+
+I will plot the communities detected within the weighted graph that have a maximum Jaccard measure of 0. This means they do not correspond with any community identified with the unweighted graph.
+
+I'll start by reading in the communities of interest. This file is created in `AnalyzeResults/rmd/meeting_20210727.Rmd`.
+
+```{r, echo = FALSE}
+gl <-
+  readr::read_rds('Data/WeightedPhenotypicAbnormality/gain_loss_weighted2unweighted.rds')
+vgl <- list()
+vgl$gain <- purrr::map(gl$gain$members, ~.x$comm)
+vgl$loss <- purrr::map(gl$loss$members, ~.x$comm)
+rm(gl)
+```
+
+Now, I'll read in the graph.
+
+```{r}
+G <-
+  read_graph(edgelist = 'Data/PhenotypicAbnormality/String_HPO_2015.phenotypic_branch.numbered.edgelist.txt',
+             nodes = 'Data/PhenotypicAbnormality/String_HPO_2015.phenotypic_branch.nodenames.txt',
+             communities = NULL)
+igraph::is_weighted(G)
+```
+
+Now, I'll plot gained communities.
+
+```{r}
+for(i in 1:length(vgl$gain)){
+  png(
+    filename = stringr::str_c(
+      'AnalyzeResults/figs/WeightedPhenotypicAbnormality/gain/',
+      'gained-comm-',
+      i,
+      '.png'
+    ),
+    width = 5,
+    height = 5,
+    units = 'in',
+    res = 100
+  )
+  plot_subgraph(G, vids = vgl$gain[[i]], order = 1, 
+                vertex.size = 6, vertex.label.cex = 0.8, 
+                layout = igraph::layout_with_fr)
+  dev.off()
+}
+```
+
+Now, I'll plot the lost communities.
+
+```{r}
+for(i in 1:length(vgl$loss)){
+  png(
+    filename = stringr::str_c(
+      'AnalyzeResults/figs/WeightedPhenotypicAbnormality/loss/',
+      'lost-comm-',
+      i,
+      '.png'
+    ),
+    width = 5,
+    height = 5,
+    units = 'in',
+    res = 100
+  )
+  plot_subgraph(G, vids = vgl$loss[[i]], order = 1, 
+                vertex.size = 6, vertex.label.cex = 0.8, 
+                layout = igraph::layout_with_fr)
+  dev.off()
+}
+```
