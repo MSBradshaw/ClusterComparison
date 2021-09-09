@@ -44,28 +44,53 @@ plot_graph <- function(G, legend = FALSE, ...) {
   }
 }
 
-plot_subgraph <- function(G, vids, order = 1, ...) {
-  neighs <- vids %>%
-    igraph::neighborhood(G, nodes = ., order = order) %>%
-    purrr::reduce(., c) %>%
-    .$name %>%
-    unique()
-  sG <- igraph::induced_subgraph(G, vids = neighs)
-  V(sG)$color <- RColorBrewer::brewer.pal(9, 'Set1')[V(sG)$gene + 1]
-  V(sG)[!(V(sG)$name %in% vids) &
-          V(sG)$gene == 1]$color <- '#c7e6ff' # grey-blue
-  V(sG)[!(V(sG)$name %in% vids) &
-          V(sG)$gene == 0]$color <- '#fca9aa' # grey-red
-  V(sG)[V(sG)$name %in% vids]$vertex_label <-
-    V(sG)[V(sG)$name %in% vids]$name
-  V(sG)[!(V(sG)$name %in% vids)]$vertex_label <- NA
-  if(length(vids) > 8) V(sG)$vertex_label <- NA
-  par(bg = NA, mar = c(0, 0, 0, 0) + 0.1)
-  plot(
-    sG,
-    vertex.label = V(sG)$vertex_label,
-    vertex.color = V(sG)$color,
-    vertex.label.color = 'black',
-    ...
-  )
+plot_subgraph <- function(G, nodes, maxn = 100, order = 1, ...) {
+  if(length(nodes) <= maxn){
+    lv <- V(G)$node %in% nodes
+    sG <- igraph::induced_subgraph(G, vids = lv)
+    neighbor_nodes <- igraph::neighborhood(G, nodes = lv, order = order) %>%
+      purrr::reduce(., c) %>%
+      unique() %>%
+      .$node
+    if(length(neighbor_nodes) >= maxn){
+      neighbor_nodes <- nodes
+      cat('Too big for neighbors', '\n')
+    }
+    sG_neigh <- igraph::induced_subgraph(G, vids = V(G)$node %in% neighbor_nodes)
+    # set all colors to dark red and blue
+    V(sG_neigh)$color <- RColorBrewer::brewer.pal(9, 'Set1')[V(sG_neigh)$gene + 1]
+    # set to pale if a neighboor
+    V(sG_neigh)[!V(sG_neigh)$node %in% V(sG)$node & V(sG_neigh)$gene == 1]$color <- '#c7e6ff' # grey-blue
+    V(sG_neigh)[!V(sG_neigh)$node %in% V(sG)$node & V(sG_neigh)$gene == 0]$color <- '#fca9aa' # grey-red
+    
+    # set vertex label
+    V(sG_neigh)$vertex_label <- NA
+    if (igraph::vcount(sG) < 8){
+      V(sG_neigh)[V(sG_neigh)$node %in% V(sG)$node]$vertex_label <-
+        V(sG_neigh)[V(sG_neigh)$node %in% V(sG)$node]$name
+    }
+    
+    # change color and width of within community ties
+    E(sG_neigh)$width <- 1
+    E(sG_neigh)$color <- 'lightgray'
+    oG_edges <- igraph::as_data_frame(sG)
+    neigh_edges <- sG_neigh %>%
+      igraph::as_data_frame() %>%
+      tibble::rowid_to_column()
+    eids <- setdiff(neigh_edges$rowid, dplyr::anti_join(neigh_edges, oG_edges, by = c('from', 'to'))$rowid)
+    E(sG_neigh)[eids]$width <- 2
+    E(sG_neigh)[eids]$color <- 'black'
+    
+    # create plot
+    par(bg = NA, mar = c(0, 0, 0, 0) + 0.1)
+    plot(
+      sG_neigh,
+      vertex.size = 6,
+      vertex.label = V(sG_neigh)$vertex_label,
+      vertex.color = V(sG_neigh)$color,
+      vertex.label.color = 'black'
+    )
+  }else{
+    NULL
+  }
 }
