@@ -24,3 +24,6 @@ Results/
 Figures/
 Edgelists/
 AnalyzeResults/figs
+.hierarchical_clustering_temp*
+Greedy_random_coms/
+Coms/
