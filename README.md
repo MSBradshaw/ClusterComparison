@@ -108,13 +108,15 @@ Create community file with CESNA results
 
 Hierarchial clister is done on each community produced by the 4 clustering algorithms. In this case each community is treated as it's own graph and uses a balanced cut with a max size of 200.
 
-`python hierarchical_clustering.py --edgelist Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt --coms Coms/greedy.String_HPO_2015.phenotypic_branch.coms.txt --output SubComs/greedy.String_HPO_2015.phenotypic_branch.coms`
+`python AnalyzeResults/hierarchical_clustering.py --algo paris --edgelist Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt --coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt --output SubComs/infomap.String_HPO_2015.phenotypic_branch.coms`
 
 `--edgelist` tab separated edge list
 
 `--output` prefix used for naming output files (there will be one output file for each community in the `--coms` files
 
 `--coms` file of communities and there members, each row is a com, first item is the com name, all others are members
+
+`--algo` algorithm to be used [`paris`, `ward`, `louvain`]
 
 
 ## Source Files:
