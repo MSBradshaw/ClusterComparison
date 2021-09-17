@@ -45,20 +45,23 @@ for line in open(coms,'r'):
     row = line.strip().split('\t')
     id = row[0]
     com = row[1:]
-    print(id)
+    if len(com) < 3:
+        print('Warning this community with < 3 members, skipping')
+        continue
     g = nx.subgraph(G, com)
     tmp_el = '.hierarchical_clustering_temp_edge_list_' + str(int(random.random()  * 100000)) + '.txt'
     with open(tmp_el,'w') as outfile:
         for edge in g.edges():
             outfile.write('\t'.join(edge))
             outfile.write('\n')
-
     paris = Paris()
     adjacency = sknetwork.data.load_edge_list(tmp_el)
     dendrogram = paris.fit_transform(adjacency['adjacency'])
-
     # write the communities to a coms file
-    num_coms = min(200, len(com))
+    num_coms = min(200, dendrogram.shape[0])
+    if num_coms < 2:
+        print('Warning: community has less than 2 members')
+        continue
     com_ids = cut_balanced(dendrogram, num_coms)
     coms_df = pd.DataFrame({'node': list(adjacency['names']), 'com': list(com_ids)})
 
