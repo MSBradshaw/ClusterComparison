@@ -88,11 +88,29 @@ Create community file with CESNA results
 
 ### Snowball
 
-`python snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
+Creates synthetic communities an scores them based on the occurance of edges found in `--new_edges` using a snowballing method.
+
+`python Utilities/snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
 --output snowball.infomap.String_HPO_2015.phenotypic_branch.tsv
 --coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt
 --new_edges Data/new_jenkins_edges.tsv
 --reps 100`
+
+`--edgelist` tab separated edge list
+
+`--output` name of file to save the community to
+
+`--coms` file of communities and there members, each row is a com, first item is the com name, all others are members
+
+`--new_edges` file with new edges, tab separated
+
+`--reps` number of repitions, default = 100
+
+### Random Sample
+
+Creates synthetic communities an scores them based on the occurance of edges found in `--new_edges` using a random sampling methods that preserved the number HPO terms and genes in each synthetic community.
+
+`python Utilities/random_sample_equal_hpo_ratio.py --edgelist Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt --output random_equal.paris.String_HPO_2015.phenotypic_branch.tsv --coms Coms/paris.String_HPO_2015.phenotypic_branch.coms.txt --new_edges Data/new_jenkins_edges.tsv --reps 100`
 
 `--edgelist` tab separated edge list
 
