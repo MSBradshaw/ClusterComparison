@@ -24,3 +24,8 @@ Results/
 Figures/
 Edgelists/
 AnalyzeResults/figs
+
+.gitignore
+AnalyzeResults/rmd/*.html
+AnalyzeResults/rmd/meeting_20210727_files/
+
