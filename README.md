@@ -46,6 +46,55 @@ Change `-nt` to the number of threads to be used for parallelization
 
 Create community file with CESNA results
 
+`python Algorithms/number_cesna
+# ClusterComparison
+
+![example workflow](https://github.com/MSBradshaw/ClusterComparison/actions/workflows/ci.yml/badge.svg)
+
+Contained within this reposity are the methods and results of a study on the effectiveness of clustering on biological ontologies
+
+## Installation & set up
+
+Clone this repo
+
+`git clone git@github.com:MSBradshaw/ClusterComparison.git`
+
+Move into the repo
+
+`cd ClusterComparison/`
+
+Create an environment
+
+`python3 -m venv env`
+
+Start the enviroment
+`source env/bin/activate`
+
+Install requirements
+`python3 -m pip install -r requirements.txt`
+
+Uncompress data
+
+`gunzip BOCC/all_genes_info.json.gz`
+
+## CESNA
+
+### Install SNAP
+
+`git clone git@github.com:snap-stanford/snap.git`
+
+`cd snap/examples/cesna`
+
+`make`
+
+### Run CENSA
+
+Change `-nt` to the number of threads to be used for parallelization
+
+`./cesna -i ../../../Data/HPO_String_edgelist.numbered.tsv -l ../../../Data/HPO_String_edgelist.nodenames.tsv -c -1 -nt 1 -o hpo_string_cesna`
+
+Create community file with CESNA results
+
 `python Algorithms/number_cesna_results.py --cesna_res snap/examples/cesna/cmtyvv.txt --output cesna_coms.txt --node_names Data/HPO_String_edgelist.nodenames.tsv`
 
 ## Greedy, Walk Trap and Belief
@@ -88,7 +137,9 @@ Create community file with CESNA results
 
 ### Snowball
 
-`python snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
+Creates synthetic communities an scores them based on the occurance of edges found in `--new_edges` using a snowballing method.
+
+`python Utilities/snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
 --output snowball.infomap.String_HPO_2015.phenotypic_branch.tsv
 --coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt
 --new_edges Data/new_jenkins_edges.tsv
@@ -103,6 +154,36 @@ Create community file with CESNA results
 `--new_edges` file with new edges, tab separated
 
 `--reps` number of repitions, default = 100
+
+### Random Sample
+
+Creates synthetic communities an scores them based on the occurance of edges found in `--new_edges` using a random sampling methods that preserved the number HPO terms and genes in each synthetic community.
+
+`python Utilities/random_sample_equal_hpo_ratio.py --edgelist Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt --output random_equal.paris.String_HPO_2015.phenotypic_branch.tsv --coms Coms/paris.String_HPO_2015.phenotypic_branch.coms.txt --new_edges Data/new_jenkins_edges.tsv --reps 100`
+
+`--edgelist` tab separated edge list
+
+`--output` name of file to save the community to
+
+`--coms` file of communities and there members, each row is a com, first item is the com name, all others are members
+
+`--new_edges` file with new edges, tab separated
+
+`--reps` number of repitions, default = 100
+
+## Hierarchial Clustering
+
+Hierarchial clister is done on each community produced by the 4 clustering algorithms. In this case each community is treated as it's own graph and uses a balanced cut with a max size of 200.
+
+`python AnalyzeResults/hierarchical_clustering.py --algo paris --edgelist Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt --coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt --output SubComs/infomap.String_HPO_2015.phenotypic_branch.coms`
+
+`--edgelist` tab separated edge list
+
+`--output` prefix used for naming output files (there will be one output file for each community in the `--coms` files
+
+`--coms` file of communities and there members, each row is a com, first item is the com name, all others are members
+
+`--algo` algorithm to be used [`paris`, `ward`, `louvain`]
 
 
 ## Source Files:
@@ -134,4 +215,3 @@ Modern HPO
 `hp_July_8_2021.obo` from http://purl.obolibrary.org/obo/hp.obo on July 8 2021
 
 `genes_to_phenotype.txt` from  http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt on July 8 2021
-

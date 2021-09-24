@@ -1,0 +1,110 @@
+import networkx as nx
+import argparse
+import random
+import pandas as pd
+
+"""
+python snowball.py --edgelist edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt
+--output snowball.infomap.String_HPO_2015.phenotypic_branch.tsv
+--coms Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt
+--new_edges Data/new_jenkins_edges.tsv
+--reps 100
+"""
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--edgelist',
+                        dest='edgelist',
+                        required=True,
+                        help='tab separated edge list')
+
+    parser.add_argument('--output',
+                        dest='output',
+                        required=True,
+                        help='name of file to save the community to')
+
+    parser.add_argument('--new_edges',
+                        dest='new_edges',
+                        required=True,
+                        help='file with new edges, tab separated')
+
+    parser.add_argument('--coms',
+                        dest='coms',
+                        required=True,
+                        help='file of communities and there members, each row is a com, '
+                             'first item is the com name, all others are members')
+
+    parser.add_argument('--reps',
+                        dest='reps',
+                        required=True,
+                        default=100,
+                        type=int,
+                        help='number of repitions, default = 100')
+
+    args = parser.parse_args()
+    return args
+
+
+def score_com(com, edges_set):
+    """
+
+    :param com: list of members of a community
+    :param edges_set: set of all edges (in both directions) named like "gene1_gene2" or "gene2_HP:0000001"
+    :return: number of edges from the dict found in the com
+    """
+    possible_edges = [y + '_' + x for y in com for x in com]
+    count = sum(e in edges_set for e in possible_edges)
+
+    return count
+
+
+args = get_args()
+
+el = args.edgelist
+output = args.output
+coms = args.coms
+new_edge_list = args.new_edges
+reps = args.reps
+
+# el = 'Edgelists/String_HPO_2015.phenotypic_branch.edgelist.txt'
+# output = 'del.txt'
+# coms = 'Coms/infomap.String_HPO_2015.phenotypic_branch.coms.txt'
+# new_edge_list = 'Data/new_jenkins_edges.tsv'
+# reps = 100
+
+new_edges = set()
+
+for line in open(new_edge_list, 'r'):
+    row = line.strip().split('\t')
+    new_edges.add(row[0] + '_' + row[1])
+    new_edges.add(row[1] + '_' + row[0])
+
+G = nx.read_edgelist(el)
+
+data = {'com_id': [], 'com_score': [], 'replicate_id': [], 'replicate_score': [], 'rep_and_com_size': []}
+
+nodes = list(G.nodes)
+
+# for each com
+for i, line in enumerate(open(coms, 'r')):
+    print(i)
+    row = line.strip().split('\t')
+    com = row[1:]
+    # this is one of the proteins that is in the weird connected component of size 2, it causes errors is not ignored
+    if '9606.ENSP00000411694' in com: continue
+    com_score = score_com(com, new_edges)
+    for i in range(reps):
+        # choose a random node from the community
+        random_sample = random.sample(nodes, len(com))
+        snowball_score = score_com(list(random_sample), new_edges)
+        data['com_id'].append(row[0])
+        data['com_score'].append(com_score)
+        data['replicate_id'].append(i)
+        data['replicate_score'].append(snowball_score)
+        data['rep_and_com_size'].append(len(com))
+
+df = pd.DataFrame(data)
+
+df.to_csv(output, index=False, sep='\t')
