@@ -185,6 +185,7 @@ Hierarchial clister is done on each community produced by the 4 clustering algor
 
 `--algo` algorithm to be used [`paris`, `ward`, `louvain`]
 
+`--com_size` intiger, max number of memebers in any one community
 
 ## Source Files:
 
