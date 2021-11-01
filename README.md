@@ -111,6 +111,8 @@ Create community file with CESNA results
 
 `python BOCC/summarize_clusters.py --coms Data/three_communities.txt --alpha 0.05 --mg2 Data/mygene2_gene_hpo_family.tsv --out results.tsv`
 
+`python BOCC/summarize_clusters.py --coms Data/three_communities.txt --alpha 0.05 --mg2 Data/mygene2_gene_hpo_family.tsv  --graph Edgelists/String_HPO_2015.all_hpo.edgelist.txt --gnomad_file Data/gnomad.v2.1.1.all_lofs.txt --out results.tsv`
+
 `--coms` should be a tab seporated file where each row represents a community. The first item in each row needs to be the cluster id/name, all subsequent items are members of the community
 
 `--mg2` path to a tab seporated files with the MyGene2 data with the follow columns: gene, HPO, family ID
@@ -118,6 +120,10 @@ Create community file with CESNA results
 `--alpha` floating point number 0-1, threshold for signifiance in FDR correction for GO enrichment (default 0.05)
 
 `--out` name of the output file, should end in `.tsv`
+
+`--gnomad_file` path to the gnomAD all pLoF genes file
+
+`--graph` path to the edgelist used to generate the communities
 
 ## Plot Communities of interest
 
